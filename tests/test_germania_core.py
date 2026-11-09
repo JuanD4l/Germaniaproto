@@ -23,11 +23,14 @@ class GermaniaCoreTestCase(unittest.TestCase):
         with self.app.app_context():
             from app.database import get_db, close_db
             db = get_db()
+            # Limpieza en orden relacional estricto (hijas -> padres)
             db.execute("DELETE FROM asistencia;")
-            db.execute("DELETE FROM horario;")
+            db.execute("DELETE FROM calificacion;")
+            db.execute("DELETE FROM actividad;")
             db.execute("DELETE FROM matricula;")
-            db.execute("DELETE FROM estudiante;")
+            db.execute("DELETE FROM horario;")
             db.execute("DELETE FROM asignacion;")
+            db.execute("DELETE FROM estudiante;")
             db.execute("DELETE FROM profesor;")
             db.execute("DELETE FROM usuario;")
             db.commit()
@@ -113,7 +116,6 @@ class GermaniaCoreTestCase(unittest.TestCase):
         })
         id_horario = hor_res.get_json()["data"]["id_horario"]
 
-        # Marcación: Retraso de 20 minutos (debe asignar valor 0.5)
         res = self.client.post("/api/v1/asistencia/registrar", json={
             "id_estudiante": id_estudiante,
             "id_horario": id_horario,
@@ -189,7 +191,14 @@ class GermaniaCoreTestCase(unittest.TestCase):
 
     def test_06_vistas_web_render(self):
         """Valida que las páginas principales carguen con código HTTP 200."""
-        rutas = ["/", "/login", "/matriculas", "/horarios", "/asistencia"]
+        # Loguearse como docente para tener permisos administrativos de vista
+        self.client.post("/login", data={
+            "tipo_documento": "CC",
+            "identificador": "5001",
+            "contrasena": "Docente123*"
+        })
+
+        rutas = ["/", "/matriculas", "/horarios", "/asistencia"]
         for r in rutas:
             res = self.client.get(r)
             self.assertEqual(res.status_code, 200, f"Fallo al cargar ruta {r}")

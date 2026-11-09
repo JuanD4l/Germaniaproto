@@ -55,3 +55,4 @@ def get_seed_sql_statements():
         "materias": materias,
         "usuarios": usuarios
     }
+

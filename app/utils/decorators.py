@@ -52,3 +52,4 @@ def requiere_rol(*roles_permitidos):
             return f(*args, **kwargs)
         return decorated_function
     return decorator
+

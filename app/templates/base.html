@@ -4,6 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}Germania - Sistema de Gestión Escolar y SAT{% endblock %}</title>
+
+  <!-- PWA Manifest & Meta -->
+  <link rel="manifest" href="/static/manifest.json">
+  <meta name="theme-color" content="#16a34a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
   <!-- Tailwind CSS Data-Light (Optimizado) -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -27,7 +34,6 @@
   </script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    /* Data-Light optimizations */
     body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; }
   </style>
 </head>
@@ -38,7 +44,7 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between h-16">
         <div class="flex items-center space-x-3">
-          <a href="{{ url_for('web.dashboard') }}" class="flex items-center space-x-2">
+          <a href="{% if session.get('user') and session['user']['rol_codigo'] in ['estudiante', 'acudiente'] %}{{ url_for('estudiante.portal') }}{% else %}{{ url_for('web.dashboard') }}{% endif %}" class="flex items-center space-x-2">
             <div class="w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center font-bold text-brand-100 text-lg border border-white/20">
               G
             </div>
@@ -50,18 +56,26 @@
         </div>
 
         <nav class="hidden md:flex items-center space-x-1">
-          <a href="{{ url_for('web.dashboard') }}" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-brand-800 transition">
-            <i class="fa-solid fa-chart-pie mr-1.5 opacity-80"></i> Dashboard
-          </a>
-          <a href="{{ url_for('web.matriculas') }}" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-brand-800 transition">
-            <i class="fa-solid fa-user-graduate mr-1.5 opacity-80"></i> Matrículas
-          </a>
-          <a href="{{ url_for('web.horarios') }}" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-brand-800 transition">
-            <i class="fa-solid fa-calendar-days mr-1.5 opacity-80"></i> Horarios
-          </a>
-          <a href="{{ url_for('web.asistencia') }}" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-brand-800 transition">
-            <i class="fa-solid fa-clipboard-check mr-1.5 opacity-80"></i> Asistencia PWA
-          </a>
+          {% if session.get('user') and session['user']['rol_codigo'] in ['estudiante', 'acudiente'] %}
+            <!-- Menú de Solo Lectura para Estudiantes -->
+            <a href="{{ url_for('estudiante.portal') }}" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-brand-800 transition">
+              <i class="fa-solid fa-graduation-cap mr-1.5 opacity-80"></i> Mi Portal Estudiantil
+            </a>
+          {% else %}
+            <!-- Menú Administrativo / Docente -->
+            <a href="{{ url_for('web.dashboard') }}" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-brand-800 transition">
+              <i class="fa-solid fa-chart-pie mr-1.5 opacity-80"></i> Dashboard
+            </a>
+            <a href="{{ url_for('web.matriculas') }}" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-brand-800 transition">
+              <i class="fa-solid fa-user-graduate mr-1.5 opacity-80"></i> Matrículas
+            </a>
+            <a href="{{ url_for('web.horarios') }}" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-brand-800 transition">
+              <i class="fa-solid fa-calendar-days mr-1.5 opacity-80"></i> Horarios
+            </a>
+            <a href="{{ url_for('web.asistencia') }}" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-brand-800 transition">
+              <i class="fa-solid fa-clipboard-check mr-1.5 opacity-80"></i> Asistencia PWA
+            </a>
+          {% endif %}
         </nav>
 
         <div class="flex items-center space-x-3">
@@ -114,6 +128,9 @@
       </div>
     </div>
   </footer>
+
+  <!-- Script Cliente PWA Offline con IndexedDB -->
+  <script src="/static/js/pwa-offline.js"></script>
 
 </body>
 </html>

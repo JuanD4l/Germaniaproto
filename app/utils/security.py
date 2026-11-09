@@ -34,3 +34,4 @@ def decode_jwt_token(token: str) -> dict:
     """Decodifica y valida un token JWT; lanza excepciones en caso de expiración o firma inválida."""
     secret = current_app.config["JWT_SECRET_KEY"]
     return jwt.decode(token, secret, algorithms=["HS256"])
+

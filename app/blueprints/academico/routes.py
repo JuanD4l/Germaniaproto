@@ -279,3 +279,4 @@ def crear_horario():
         "hora_fin": hora_fin,
         "aula": aula
     }, message="Horario asignado exitosamente sin colisiones", status_code=201)
+

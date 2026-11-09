@@ -239,3 +239,4 @@ Tienes **dos opciones** para desplegar en Render:
 1. **Plan Gratuito de Render (Cold Starts)**: En el plan gratuito de Render, los servicios web se suspenden tras 15 minutos de inactividad, pudiendo tomar hasta 40 segundos en responder la primera petición tras el reposo.
 2. **Sincronización Offline PWA**: El prototipo procesa los lotes JSON enviados desde IndexedDB vía `POST /api/v1/asistencia/sincronizar`. Las notificaciones push mediante SMS/WhatsApp a padres están planificadas para la Fase 3 del roadmap.
 3. **Módulo de Calificaciones**: El cálculo actual del factor académico del IVE toma las notas registradas en el periodo; la planilla multidimensional completa con ponderación (Saber 40%, Hacer 40%, Ser 20%) está programada para el Hito 2 ampliado.
+

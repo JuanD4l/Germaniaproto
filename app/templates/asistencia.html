@@ -11,6 +11,9 @@
       <p class="text-sm text-slate-500 mt-1">Marcación con cálculo automático de inasistencia ponderada y actualización del IVE.</p>
     </div>
     <div class="flex items-center space-x-2">
+      <span id="offline-count-badge" style="display:none;" class="px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300 animate-pulse">
+        0 guardados offline
+      </span>
       <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-brand-100 text-brand-800">
         <i class="fa-solid fa-wifi mr-1.5"></i> PWA Offline Ready
       </span>
@@ -47,8 +50,13 @@
         <h2 class="text-base font-bold text-slate-900">Planilla de Clase: Matemáticas (Grado 6° A)</h2>
         <p class="text-xs text-slate-500">Horario: Lunes 07:00 - 08:30 • Aula 101 • Sede Principal Santa Ana</p>
       </div>
-      <div class="text-xs font-bold text-slate-600 bg-slate-100 px-3 py-1.5 rounded-lg">
-        {{ estudiantes|length }} Estudiantes Registrados
+      <div class="flex items-center space-x-3">
+        <button onclick="sincronizarPendientesConBackend()" class="px-3 py-1.5 rounded-lg border border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-100 transition">
+          <i class="fa-solid fa-rotate mr-1"></i> Forzar Sincronización
+        </button>
+        <div class="text-xs font-bold text-slate-600 bg-slate-100 px-3 py-1.5 rounded-lg">
+          {{ estudiantes|length }} Estudiantes Registrados
+        </div>
       </div>
     </div>
 
@@ -71,7 +79,9 @@
             <td class="p-3 font-bold text-slate-900 text-sm">
               {{ est.nombre }} {{ est.apellido }}
             </td>
-            <td class="p-3 font-mono text-slate-600">{{ est.tipo_documento }} {{ est.documento }}</td>
+            <td class="p-3 font-mono text-slate-600" id="doc-{{ est.id_estudiante }}" data-tipo="{{ est.tipo_documento }}" data-num="{{ est.documento }}">
+              {{ est.tipo_documento }} {{ est.documento }}
+            </td>
 
             <!-- Selección de Estado -->
             <td class="p-3 text-center">
@@ -146,14 +156,34 @@
   async function guardarAsistencia(idEst) {
     const estado = document.getElementById(`estado-${idEst}`).value;
     const minutos = parseInt(document.getElementById(`minutos-${idEst}`).value) || 0;
+    const docElem = document.getElementById(`doc-${idEst}`);
+    const tipoDoc = docElem ? docElem.getAttribute('data-tipo') : 'TI';
+    const numDoc = docElem ? docElem.getAttribute('data-num') : '';
+
+    let valorInasistencia = 0.0;
+    if (estado === 'ausente' || minutos > 30) valorInasistencia = 1.0;
+    else if (estado === 'retraso' || minutos > 15) valorInasistencia = 0.5;
 
     const payload = {
       id_estudiante: idEst,
       id_horario: 1,
       fecha: '{{ fecha_actual }}',
       estado: estado,
-      minutos_retraso: minutos
+      minutos_retraso: minutos,
+      tipo_documento: tipoDoc,
+      documento: numDoc,
+      valor_inasistencia: valorInasistencia
     };
+
+    // Si no hay red, guardar directamente en IndexedDB
+    if (!navigator.onLine) {
+      await guardarAsistenciaLocal(payload);
+      document.getElementById(`valor-${idEst}`).innerText = valorInasistencia;
+      document.getElementById(`semaforo-${idEst}`).innerHTML = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">💾 Guardado Local</span>`;
+      actualizarContadorPendientes();
+      mostrarBannerSincronizacion('Registro guardado en IndexedDB local (Sin conexión)', 'warning');
+      return;
+    }
 
     try {
       const res = await fetch('/api/v1/asistencia/registrar', {
@@ -174,12 +204,17 @@
           badge = `<span class="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-emerald-100 text-emerald-800">🟢 Verde (${ive.valor_ive})</span>`;
         }
         document.getElementById(`semaforo-${idEst}`).innerHTML = badge;
-        alert(`Asistencia guardada para estudiante ${idEst}. Semáforo: ${ive.nivel_riesgo.toUpperCase()}`);
+        mostrarBannerSincronizacion(`Asistencia registrada online en servidor (IVE: ${ive.valor_ive})`, 'success');
       } else {
         alert('Error: ' + data.error);
       }
     } catch (e) {
-      alert('Error en conexión: ' + e.message);
+      // Fallback a IndexedDB si falla la red en el envío
+      await guardarAsistenciaLocal(payload);
+      document.getElementById(`valor-${idEst}`).innerText = valorInasistencia;
+      document.getElementById(`semaforo-${idEst}`).innerHTML = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">💾 Guardado Local</span>`;
+      actualizarContadorPendientes();
+      mostrarBannerSincronizacion('Fallo de red: guardado en IndexedDB offline para sincronización posterior', 'warning');
     }
   }
 </script>

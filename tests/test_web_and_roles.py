@@ -4,7 +4,7 @@ from app.db_init_sqlite import init_sqlite_db
 
 
 class WebAndRolesTestCase(unittest.TestCase):
-    """Pruebas adicionales para formularios Web y control RBAC."""
+    """Pruebas para formularios Web y control RBAC."""
 
     @classmethod
     def setUpClass(cls):
@@ -19,19 +19,31 @@ class WebAndRolesTestCase(unittest.TestCase):
         self.app = self.__class__.app
         self.client = self.app.test_client()
 
-    def test_01_web_login_flow(self):
-        """Valida el inicio de sesión web con formulario y redirección."""
-        # Registrar un rector
-        self.client.post("/api/v1/auth/registro", json={
-            "id_rol": 2,
-            "tipo_documento": "CC",
-            "documento": "2001",
-            "nombre": "María",
-            "apellido": "Rectoría",
-            "email": "rectoria_test@santana.edu.co",
-            "contrasena": "Germania2026*"
-        })
+        with self.app.app_context():
+            from app.database import get_db, close_db
+            from werkzeug.security import generate_password_hash
+            db = get_db()
+            pw = generate_password_hash("Germania2026*", method="scrypt")
 
+            # Sembrar rector
+            db.execute("""
+                INSERT OR IGNORE INTO usuario (id_usuario, id_rol, tipo_documento, documento, nombre, apellido, email, contrasena)
+                VALUES (2, 2, 'CC', '2001', 'María', 'Rectoría', 'rectoria_test@santana.edu.co', ?)
+            """, (pw,))
+
+            # Sembrar profesor y asignación
+            db.execute("""
+                INSERT OR IGNORE INTO usuario (id_usuario, id_rol, tipo_documento, documento, nombre, apellido, email, contrasena)
+                VALUES (4, 4, 'CC', '4001', 'Docente', 'Prueba', 'docente_test@santana.edu.co', ?)
+            """, (pw,))
+            db.execute("INSERT OR IGNORE INTO profesor (id_profesor, id_usuario, especialidad) VALUES (1, 4, 'Matemáticas')")
+            db.execute("INSERT OR IGNORE INTO asignacion (id_asignacion, id_profesor, id_materia, id_curso) VALUES (1, 1, 1, 1)")
+
+            db.commit()
+            close_db()
+
+    def test_01_web_login_flow(self):
+        """Valida el inicio de sesión web con formulario y redirección al Dashboard."""
         res = self.client.post("/login", data={
             "tipo_documento": "CC",
             "identificador": "2001",
@@ -47,6 +59,13 @@ class WebAndRolesTestCase(unittest.TestCase):
 
     def test_02_web_crear_matricula_form(self):
         """Valida la creación de matrícula vía formulario web Data-Light."""
+        # Loguearse como rector
+        self.client.post("/login", data={
+            "tipo_documento": "CC",
+            "identificador": "2001",
+            "contrasena": "Germania2026*"
+        })
+
         res = self.client.post("/matriculas/crear", data={
             "tipo_documento": "TI",
             "documento": "1065849888",
@@ -62,6 +81,13 @@ class WebAndRolesTestCase(unittest.TestCase):
 
     def test_03_web_crear_horario_form(self):
         """Valida la creación de horario vía formulario web."""
+        # Loguearse como rector
+        self.client.post("/login", data={
+            "tipo_documento": "CC",
+            "identificador": "2001",
+            "contrasena": "Germania2026*"
+        })
+
         res = self.client.post("/horarios/crear", data={
             "id_asignacion": 1,
             "dia_semana": "viernes",

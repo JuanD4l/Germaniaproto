@@ -134,6 +134,16 @@ def init_sqlite_db(connection: sqlite3.Connection):
         FOREIGN KEY (id_asignacion) REFERENCES asignacion(id_asignacion)
     );
 
+    CREATE TABLE IF NOT EXISTS actividad (
+        id_actividad INTEGER PRIMARY KEY AUTOINCREMENT,
+        id_asignacion INTEGER NOT NULL,
+        titulo TEXT NOT NULL,
+        descripcion TEXT,
+        fecha_entrega TEXT NOT NULL,
+        estado TEXT NOT NULL DEFAULT 'pendiente',
+        FOREIGN KEY (id_asignacion) REFERENCES asignacion(id_asignacion)
+    );
+
     CREATE TABLE IF NOT EXISTS asistencia (
         id_asistencia INTEGER PRIMARY KEY AUTOINCREMENT,
         id_estudiante INTEGER NOT NULL,

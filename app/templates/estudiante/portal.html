@@ -1,0 +1,292 @@
+{% extends "base.html" %}
+
+{% block title %}Portal del Estudiante - Germania{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <!-- Encabezado del Perfil Estudiantil -->
+  <div class="bg-gradient-to-r from-emerald-800 to-brand-900 rounded-2xl p-6 text-white shadow-lg border border-emerald-700/40">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div class="flex items-center space-x-4">
+        <div class="w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center font-bold text-2xl text-emerald-200 border border-white/20 shadow-inner">
+          <i class="fa-solid fa-graduation-cap"></i>
+        </div>
+        <div>
+          <span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-white/20 text-emerald-100 mb-1">
+            Modo Consulta • Solo Lectura
+          </span>
+          <h1 class="text-2xl font-black tracking-tight">{{ estudiante.nombre }} {{ estudiante.apellido }}</h1>
+          <p class="text-xs text-emerald-100 mt-0.5 font-medium">
+            Documento: <span class="font-mono">{{ estudiante.tipo_documento }} {{ estudiante.documento }}</span> • {{ estudiante.curso_nombre }} • {{ estudiante.sede_nombre }}
+          </p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <div class="bg-white/10 backdrop-blur px-4 py-2 rounded-xl border border-white/10 text-center">
+          <span class="block text-[10px] font-bold uppercase tracking-wider text-emerald-200">Jornada</span>
+          <span class="text-xs font-black uppercase">{{ estudiante.jornada }}</span>
+        </div>
+        <div class="bg-white/10 backdrop-blur px-4 py-2 rounded-xl border border-white/10 text-center">
+          <span class="block text-[10px] font-bold uppercase tracking-wider text-emerald-200">Año Lectivo</span>
+          <span class="text-xs font-black">{{ estudiante.anio }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Métricas Personales -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <!-- Promedio Académico -->
+    <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Promedio General</span>
+        <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+          <i class="fa-solid fa-star"></i>
+        </div>
+      </div>
+      <div class="text-3xl font-black text-slate-900 mt-2">{{ promedio }}</div>
+      <div class="text-xs text-slate-500 mt-1">Escala nacional 0.0 - 5.0</div>
+    </div>
+
+    <!-- Semáforo de Permanencia IVE -->
+    <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm
+      {% if ive.nivel_riesgo == 'rojo' %}border-l-4 border-l-red-500{% elif ive.nivel_riesgo == 'naranja' %}border-l-4 border-l-amber-500{% else %}border-l-4 border-l-emerald-500{% endif %}">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Permanencia (IVE)</span>
+        <div class="w-8 h-8 rounded-lg flex items-center justify-center font-bold
+          {% if ive.nivel_riesgo == 'rojo' %}bg-red-50 text-red-600{% elif ive.nivel_riesgo == 'naranja' %}bg-amber-50 text-amber-600{% else %}bg-emerald-50 text-emerald-600{% endif %}">
+          <i class="fa-solid fa-shield-heart"></i>
+        </div>
+      </div>
+      <div class="text-2xl font-black text-slate-900 mt-2 flex items-center gap-2">
+        {% if ive.nivel_riesgo == 'rojo' %}
+          <span class="text-red-600">🔴 Crítico ({{ ive.valor_ive }})</span>
+        {% elif ive.nivel_riesgo == 'naranja' %}
+          <span class="text-amber-600">🟠 Alerta ({{ ive.valor_ive }})</span>
+        {% else %}
+          <span class="text-emerald-600">🟢 Estable ({{ ive.valor_ive }})</span>
+        {% endif %}
+      </div>
+      <div class="text-xs text-slate-500 mt-1">{{ ive.diagnostico }}</div>
+    </div>
+
+    <!-- Inasistencias Ponderadas -->
+    <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-bold uppercase tracking-wider text-slate-500">% Inasistencias</span>
+        <div class="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center font-bold">
+          <i class="fa-solid fa-user-clock"></i>
+        </div>
+      </div>
+      <div class="text-3xl font-black text-slate-900 mt-2">{{ ive.porcentaje_fallas }}%</div>
+      <div class="text-xs text-slate-500 mt-1">Límite crítico: &ge; 15%</div>
+    </div>
+
+    <!-- Actividades Pendientes -->
+    <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Tareas & Actividades</span>
+        <div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
+          <i class="fa-solid fa-list-check"></i>
+        </div>
+      </div>
+      <div class="text-3xl font-black text-slate-900 mt-2">{{ actividades|length }}</div>
+      <div class="text-xs text-slate-500 mt-1">Compromisos vigentes</div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+    <!-- 1. Mis Calificaciones -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-base font-bold text-slate-900 flex items-center">
+          <i class="fa-solid fa-award text-brand-600 mr-2"></i> Mis Calificaciones (Periodo 1)
+        </h2>
+        <span class="text-xs font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-700">Inmutable</span>
+      </div>
+
+      {% if calificaciones %}
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-slate-100 uppercase text-slate-600 font-bold">
+            <tr>
+              <th class="p-3">Materia</th>
+              <th class="p-3">Docente</th>
+              <th class="p-3 text-center">Nota</th>
+              <th class="p-3 text-center">Desempeño</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200">
+            {% for cal in calificaciones %}
+            <tr class="hover:bg-slate-50">
+              <td class="p-3 font-bold text-slate-900">{{ cal.materia_nombre }}</td>
+              <td class="p-3 text-slate-600">Prof. {{ cal.profesor_nombre }} {{ cal.profesor_apellido }}</td>
+              <td class="p-3 text-center font-black text-sm">
+                {% if cal.nota is not none %}
+                  <span class="{% if cal.nota >= 3.0 %}text-emerald-700{% else %}text-red-700{% endif %}">
+                    {{ cal.nota }}
+                  </span>
+                {% else %}
+                  <span class="text-slate-500 font-normal italic">Sin registrar</span>
+                {% endif %}
+              </td>
+              <td class="p-3 text-center">
+                {% if cal.nota is not none %}
+                  {% if cal.nota >= 4.5 %}
+                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">Superior</span>
+                  {% elif cal.nota >= 4.0 %}
+                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800">Alto</span>
+                  {% elif cal.nota >= 3.0 %}
+                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">Básico</span>
+                  {% else %}
+                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-800">Bajo</span>
+                  {% endif %}
+                {% else %}
+                  <span class="text-slate-500">-</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="text-xs text-slate-500 text-center py-6">No hay notas registradas para este periodo lectivo.</p>
+      {% endif %}
+    </div>
+
+    <!-- 2. Mi Horario Semanal -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-base font-bold text-slate-900 flex items-center">
+          <i class="fa-solid fa-calendar-day text-brand-600 mr-2"></i> Mi Horario de Clases
+        </h2>
+        <span class="text-xs font-bold px-2 py-0.5 rounded bg-brand-50 text-brand-800">{{ estudiante.curso_nombre }}</span>
+      </div>
+
+      {% if horarios %}
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-slate-100 uppercase text-slate-600 font-bold">
+            <tr>
+              <th class="p-3">Día</th>
+              <th class="p-3">Hora</th>
+              <th class="p-3">Materia</th>
+              <th class="p-3">Aula</th>
+              <th class="p-3">Docente</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200">
+            {% for h in horarios %}
+            <tr class="hover:bg-slate-50">
+              <td class="p-3 font-bold uppercase text-brand-800">{{ h.dia_semana }}</td>
+              <td class="p-3 font-mono text-slate-700">{{ h.hora_inicio }} - {{ h.hora_fin }}</td>
+              <td class="p-3 font-bold text-slate-900">{{ h.materia_nombre }}</td>
+              <td class="p-3"><span class="px-1.5 py-0.5 bg-slate-100 rounded text-slate-700 font-mono">{{ h.aula }}</span></td>
+              <td class="p-3 text-slate-600">Prof. {{ h.profesor_nombre }} {{ h.profesor_apellido }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="text-xs text-slate-500 text-center py-6">No hay bloques de horario asignados al curso.</p>
+      {% endif %}
+    </div>
+
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+    <!-- 3. Actividades Académicas & Tareas -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-base font-bold text-slate-900 flex items-center">
+          <i class="fa-solid fa-book-open-reader text-brand-600 mr-2"></i> Tareas y Actividades Pedagógicas
+        </h2>
+        <span class="text-xs font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-700">{{ actividades|length }} Asignadas</span>
+      </div>
+
+      {% if actividades %}
+      <div class="space-y-3">
+        {% for act in actividades %}
+        <div class="p-3.5 rounded-lg border border-slate-200 bg-slate-50 flex items-start justify-between">
+          <div>
+            <div class="font-bold text-sm text-slate-900">{{ act.titulo }}</div>
+            <div class="text-xs text-brand-800 font-medium mt-0.5">
+              {{ act.materia_nombre }} • Prof. {{ act.profesor_nombre }} {{ act.profesor_apellido }}
+            </div>
+            <p class="text-xs text-slate-600 mt-1">{{ act.descripcion }}</p>
+          </div>
+          <div class="text-right">
+            <span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-900">
+              Entrega: {{ act.fecha_entrega }}
+            </span>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="p-6 text-center bg-slate-50 rounded-lg border border-dashed border-slate-200">
+        <i class="fa-solid fa-mug-hot text-2xl text-slate-400 mb-1"></i>
+        <div class="text-xs font-semibold text-slate-600">¡Al día! No tienes actividades pendientes registradas.</div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- 4. Historial de Asistencia Personal -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-base font-bold text-slate-900 flex items-center">
+          <i class="fa-solid fa-clock-rotate-left text-brand-600 mr-2"></i> Historial Reciente de Asistencia
+        </h2>
+        <span class="text-xs font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-700">Tiempos de Gracia</span>
+      </div>
+
+      {% if historial_asistencia %}
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-slate-100 uppercase text-slate-600 font-bold">
+            <tr>
+              <th class="p-2.5">Fecha</th>
+              <th class="p-2.5">Materia</th>
+              <th class="p-2.5 text-center">Estado</th>
+              <th class="p-2.5 text-center">Retardo</th>
+              <th class="p-2.5 text-center">Ponderación</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200">
+            {% for asis in historial_asistencia %}
+            <tr class="hover:bg-slate-50">
+              <td class="p-2.5 font-mono text-slate-700">{{ asis.fecha }}</td>
+              <td class="p-2.5 font-bold text-slate-900">{{ asis.materia_nombre }}</td>
+              <td class="p-2.5 text-center">
+                {% if asis.estado == 'presente' %}
+                  <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">Presente</span>
+                {% elif asis.estado == 'retraso' %}
+                  <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">Retraso</span>
+                {% elif asis.estado == 'excusa' %}
+                  <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800">Excusado</span>
+                {% else %}
+                  <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-800">Ausente</span>
+                {% endif %}
+              </td>
+              <td class="p-2.5 text-center font-mono">{{ asis.minutos_retraso or 0 }} min</td>
+              <td class="p-2.5 text-center font-bold">{{ asis.valor_inasistencia }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="text-xs text-slate-500 text-center py-6">Aún no se han asentado pases de lista para este estudiante.</p>
+      {% endif %}
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}

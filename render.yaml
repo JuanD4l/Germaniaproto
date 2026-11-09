@@ -26,3 +26,4 @@ databases:
     user: germania_admin
     region: ohio
     plan: free
+

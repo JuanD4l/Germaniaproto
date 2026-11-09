@@ -20,3 +20,4 @@ def error_response(error_message, status_code=400, details=None):
     if details:
         payload["details"] = details
     return jsonify(payload), status_code
+

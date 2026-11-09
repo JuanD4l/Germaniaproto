@@ -16,16 +16,18 @@ def create_app(config_name="development"):
     # Registrar teardown para liberar conexiones a BD
     app.teardown_appcontext(close_db)
 
-    # Registrar Blueprints API
+    # Registrar Blueprints API & Web
     from app.blueprints.auth import auth_bp
     from app.blueprints.academico import academico_bp
     from app.blueprints.asistencia import asistencia_bp
     from app.blueprints.web import web_bp
+    from app.blueprints.estudiante import estudiante_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(academico_bp)
     app.register_blueprint(asistencia_bp)
     app.register_blueprint(web_bp)
+    app.register_blueprint(estudiante_bp)
 
     # Handlers globales de error HTTP para peticiones JSON
     @app.errorhandler(400)

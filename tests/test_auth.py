@@ -23,9 +23,10 @@ class AuthTestCase(unittest.TestCase):
         with self.app.app_context():
             from app.database import get_db, close_db
             db = get_db()
-            # Limpieza en orden relacional (hijas -> padres)
+            # Limpieza en orden relacional estricto (hijas -> padres)
             db.execute("DELETE FROM asistencia;")
             db.execute("DELETE FROM calificacion;")
+            db.execute("DELETE FROM actividad;")
             db.execute("DELETE FROM matricula;")
             db.execute("DELETE FROM horario;")
             db.execute("DELETE FROM asignacion;")

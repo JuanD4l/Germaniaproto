@@ -123,6 +123,15 @@ CREATE TABLE IF NOT EXISTS horario (
     CONSTRAINT ck_horario_horas CHECK (hora_fin > hora_inicio)
 );
 
+CREATE TABLE IF NOT EXISTS actividad (
+    id_actividad SERIAL PRIMARY KEY,
+    id_asignacion INT NOT NULL REFERENCES asignacion(id_asignacion) ON UPDATE CASCADE ON DELETE CASCADE,
+    titulo VARCHAR(150) NOT NULL,
+    descripcion TEXT,
+    fecha_entrega DATE NOT NULL,
+    estado VARCHAR(20) NOT NULL DEFAULT 'pendiente'
+);
+
 CREATE TABLE IF NOT EXISTS asistencia (
     id_asistencia SERIAL PRIMARY KEY,
     id_estudiante INT NOT NULL REFERENCES estudiante(id_estudiante) ON UPDATE CASCADE ON DELETE RESTRICT,

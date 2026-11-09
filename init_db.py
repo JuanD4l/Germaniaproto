@@ -82,7 +82,6 @@ def run_init():
                     ON CONFLICT (tipo_documento, documento) DO NOTHING;
                 """, usr)
 
-            # Sembrar profesor y estudiantes de prueba
             cursor.execute("""
                 INSERT INTO profesor (id_usuario, especialidad)
                 SELECT id_usuario, 'Matemáticas y Ciencias' FROM usuario WHERE documento = '4001'
@@ -97,6 +96,36 @@ def run_init():
                 INSERT INTO horario (id_asignacion, dia_semana, hora_inicio, hora_fin, aula)
                 VALUES (1, 'lunes', '07:00:00', '08:30:00', 'Aula 101')
                 ON CONFLICT DO NOTHING;
+            """)
+
+            # Estudiante de prueba Juan Pérez
+            cursor.execute("""
+                INSERT INTO estudiante (id_usuario, direccion, fecha_nacimiento, puntaje_esa)
+                SELECT id_usuario, 'Corregimiento Germania', '2012-05-14', 0.20 FROM usuario WHERE documento = '1065849201'
+                ON CONFLICT (id_usuario) DO NOTHING;
+            """)
+            cursor.execute("""
+                INSERT INTO matricula (id_estudiante, id_curso, id_anio, fecha, estado, documentacion_fisica_entregada)
+                SELECT e.id_estudiante, 1, 1, '2026-01-25', 'activa', TRUE
+                FROM estudiante e
+                JOIN usuario u ON u.id_usuario = e.id_usuario
+                WHERE u.documento = '1065849201'
+                ON CONFLICT (id_estudiante, id_anio) DO NOTHING;
+            """)
+
+            # Sembrar Actividades y Notas
+            cursor.execute("""
+                INSERT INTO actividad (id_asignacion, titulo, descripcion, fecha_entrega, estado)
+                VALUES (1, 'Taller 1: Fracciones y Operaciones Básicas', 'Resolver ejercicios 1 al 15 de la guía pedagógica', '2026-03-15', 'pendiente')
+                ON CONFLICT DO NOTHING;
+            """)
+            cursor.execute("""
+                INSERT INTO calificacion (id_estudiante, id_asignacion, id_periodo, nota, id_usuario_registro)
+                SELECT e.id_estudiante, 1, 1, 4.2, 4
+                FROM estudiante e
+                JOIN usuario u ON u.id_usuario = e.id_usuario
+                WHERE u.documento = '1065849201'
+                ON CONFLICT (id_estudiante, id_asignacion, id_periodo) DO NOTHING;
             """)
 
             db.commit()
@@ -128,12 +157,30 @@ def run_init():
                 VALUES (1, 1, 'lunes', '07:00', '08:30', 'Aula 101')
             """)
             cursor.execute("""
+                INSERT OR IGNORE INTO horario (id_horario, id_asignacion, dia_semana, hora_inicio, hora_fin, aula)
+                VALUES (2, 1, 'miercoles', '08:30', '10:00', 'Aula 101')
+            """)
+            cursor.execute("""
                 INSERT OR IGNORE INTO estudiante (id_estudiante, id_usuario, direccion, fecha_nacimiento, puntaje_esa)
                 VALUES (1, 6, 'Vereda Germania', '2012-05-10', 0.20)
             """)
             cursor.execute("""
                 INSERT OR IGNORE INTO matricula (id_matricula, id_estudiante, id_curso, id_anio, fecha, estado, documentacion_fisica_entregada)
                 VALUES (1, 1, 1, 1, '2026-01-25', 'activa', 1)
+            """)
+
+            # Actividades y calificaciones de prueba
+            cursor.execute("""
+                INSERT OR IGNORE INTO actividad (id_actividad, id_asignacion, titulo, descripcion, fecha_entrega, estado)
+                VALUES (1, 1, 'Taller 1: Fracciones y Operaciones Básicas', 'Resolver ejercicios 1 al 15 de la guía pedagógica institucional', '2026-03-15', 'pendiente')
+            """)
+            cursor.execute("""
+                INSERT OR IGNORE INTO actividad (id_actividad, id_asignacion, titulo, descripcion, fecha_entrega, estado)
+                VALUES (2, 1, 'Guía 2: Geometría Plana y Áreas', 'Dibujar y calcular área de 5 figuras poligonales en papel milimetrado', '2026-03-22', 'pendiente')
+            """)
+            cursor.execute("""
+                INSERT OR IGNORE INTO calificacion (id_calificacion, id_estudiante, id_asignacion, id_periodo, nota, id_usuario_registro)
+                VALUES (1, 1, 1, 1, 4.2, 4)
             """)
 
             db.commit()

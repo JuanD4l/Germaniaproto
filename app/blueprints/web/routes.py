@@ -1,9 +1,31 @@
+from functools import wraps
 from datetime import date
 from flask import render_template, request, redirect, url_for, flash, session
 from app.blueprints.web import web_bp
 from app.database import query_db, execute_db
 from app.utils.security import verify_password, hash_password
 from app.blueprints.asistencia.routes import calcular_ive_estudiante
+
+
+def solo_personal_autorizado(f):
+    """
+    Middleware que restringe el acceso a funciones administrativas.
+    Bloquea el acceso a estudiantes y acudientes.
+    """
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        user = session.get("user")
+        if not user:
+            flash("Debe iniciar sesión para acceder al recurso.", "info")
+            return redirect(url_for("web.login"))
+
+        rol = user.get("rol_codigo")
+        if rol in ["estudiante", "acudiente"]:
+            flash("Acceso Denegado (403): Los estudiantes no cuentan con permisos para funciones administrativas.", "error")
+            return redirect(url_for("estudiante.portal"))
+
+        return f(*args, **kwargs)
+    return decorated_function
 
 
 @web_bp.route("/login", methods=["GET", "POST"])
@@ -14,7 +36,6 @@ def login():
         tipo_doc = request.form.get("tipo_documento", "CC").strip().upper()
         contrasena = request.form.get("contrasena", "").strip()
 
-        # Búsqueda por tipo + documento o por email
         usuario = query_db("""
             SELECT u.id_usuario, u.id_rol, u.tipo_documento, u.documento, u.nombre,
                    u.apellido, u.email, u.contrasena, u.estado, r.codigo AS rol_codigo, r.nombre AS rol_nombre
@@ -31,7 +52,6 @@ def login():
             flash("Usuario inactivo o suspendido. Contacte a Rectoría.", "error")
             return render_template("login.html")
 
-        # Guardar en sesión
         session["user"] = {
             "id_usuario": usuario["id_usuario"],
             "id_rol": usuario["id_rol"],
@@ -41,6 +61,11 @@ def login():
             "documento": usuario["documento"]
         }
         flash(f"¡Bienvenido(a), {usuario['nombre']}!", "success")
+
+        # Redirección según rol: Estudiantes a su Portal de Solo Lectura
+        if usuario["rol_codigo"] in ["estudiante", "acudiente"]:
+            return redirect(url_for("estudiante.portal"))
+
         return redirect(url_for("web.dashboard"))
 
     return render_template("login.html")
@@ -57,6 +82,10 @@ def logout():
 @web_bp.route("/")
 def dashboard():
     """Dashboard principal con métricas de permanencia y semáforo IVE."""
+    user = session.get("user")
+    if user and user.get("rol_codigo") in ["estudiante", "acudiente"]:
+        return redirect(url_for("estudiante.portal"))
+
     sedes = query_db("""
         SELECT s.id_sede, s.nombre, s.codigo_dane, s.direccion, s.es_principal, s.estado,
                COUNT(c.id_curso) AS total_cursos
@@ -100,8 +129,9 @@ def dashboard():
 
 
 @web_bp.route("/matriculas", methods=["GET"])
+@solo_personal_autorizado
 def matriculas():
-    """Vista de Admisión y Matrícula Data-Light."""
+    """Vista de Admisión y Matrícula Data-Light (Exclusivo Personal Autorizado)."""
     cursos = query_db("""
         SELECT c.id_curso, c.nombre, c.grado, s.nombre AS sede_nombre
         FROM curso c
@@ -126,6 +156,7 @@ def matriculas():
 
 
 @web_bp.route("/matriculas/crear", methods=["POST"])
+@solo_personal_autorizado
 def crear_matricula_form():
     """Procesamiento del formulario de matrícula."""
     tipo_doc = request.form.get("tipo_documento", "TI").strip().upper()
@@ -137,7 +168,6 @@ def crear_matricula_form():
     puntaje_esa = float(request.form.get("puntaje_esa", 0.20))
     doc_entregada = 1 if request.form.get("documentacion_fisica_entregada") else 0
 
-    # Validar duplicados de documento
     existente = query_db(
         "SELECT id_usuario FROM usuario WHERE tipo_documento = %s AND documento = %s",
         (tipo_doc, doc),
@@ -147,7 +177,6 @@ def crear_matricula_form():
         flash(f"Error 409: Ya existe un registro con el documento {tipo_doc} {doc}.", "error")
         return redirect(url_for("web.matriculas"))
 
-    # Rol estudiante (5) y año lectivo activo
     rol_est = query_db("SELECT id_rol FROM rol WHERE codigo = 'estudiante'", one=True)
     id_rol = rol_est["id_rol"] if rol_est else 5
     anio = query_db("SELECT id_anio FROM anio_lectivo WHERE estado = 'activo' ORDER BY anio DESC", one=True)
@@ -180,8 +209,9 @@ def crear_matricula_form():
 
 
 @web_bp.route("/horarios", methods=["GET"])
+@solo_personal_autorizado
 def horarios():
-    """Vista de gestión de malla horaria."""
+    """Vista de gestión de malla horaria (Exclusivo Personal Autorizado)."""
     asignaciones = query_db("""
         SELECT a.id_asignacion, m.nombre AS materia_nombre, c.nombre AS curso_nombre,
                u.nombre AS profesor_nombre, u.apellido AS profesor_apellido
@@ -210,6 +240,7 @@ def horarios():
 
 
 @web_bp.route("/horarios/crear", methods=["POST"])
+@solo_personal_autorizado
 def crear_horario_form():
     """Procesamiento del formulario de horarios con algoritmo anti-colisión."""
     id_asignacion = int(request.form.get("id_asignacion"))
@@ -222,11 +253,9 @@ def crear_horario_form():
         flash("La hora de fin debe ser posterior a la de inicio.", "error")
         return redirect(url_for("web.horarios"))
 
-    # Obtener profesor
     asig = query_db("SELECT id_profesor FROM asignacion WHERE id_asignacion = %s", (id_asignacion,), one=True)
     id_profesor = asig["id_profesor"]
 
-    # Validación de Choque Horario
     solapamiento_prof = query_db("""
         SELECT h.id_horario, h.hora_inicio, h.hora_fin, m.nombre AS materia
         FROM horario h
@@ -251,8 +280,9 @@ def crear_horario_form():
 
 
 @web_bp.route("/asistencia", methods=["GET"])
+@solo_personal_autorizado
 def asistencia():
-    """Planilla diaria de asistencia docente."""
+    """Planilla diaria de asistencia docente (Exclusivo Docentes y Administrativos)."""
     hoy = date.today().isoformat()
 
     estudiantes = query_db("""
@@ -266,7 +296,6 @@ def asistencia():
         ORDER BY u.apellido ASC, u.nombre ASC
     """, (hoy,))
 
-    # Añadir diagnóstico IVE en vivo a cada estudiante
     estudiantes_con_ive = []
     for est in estudiantes:
         ive = calcular_ive_estudiante(est["id_estudiante"])
