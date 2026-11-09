@@ -133,13 +133,82 @@ TOTAL                                    1139    171    85%
 
 ---
 
-## ☁️ 5. Despliegue en Render
+## ☁️ 5. Despliegue Gratuito (GitHub + Neon + Render)
 
-El repositorio incluye el archivo Blueprint [`render.yaml`](file:///c:/Users/LEMUS/OneDrive/Desktop/ADSO/prototipo%20germania/render.yaml):
-1. Sube tu código a GitHub:
-   ```bash
-   git push -u origin main
+> **Nota importante (2024+):** Render eliminó el plan gratuito de PostgreSQL gestionado.
+> La combinación 100%% gratuita recomendada es: **GitHub** (código) + **Neon** (PostgreSQL serverless gratis) + **Render** (web service gratis).
+
+---
+
+### Paso 1 — Crear el Repositorio en GitHub
+
+Crea el repo en [github.com/new](https://github.com/new) (nombre: `germania`, visibilidad: **Public**), luego:
+
+```bash
+git remote add origin https://github.com/TU_USUARIO/germania.git
+git push -u origin main
+```
+
+---
+
+### Paso 2 — Crear la Base de Datos Gratuita en Neon
+
+1. Ve a [neon.tech](https://neon.tech) → **Sign up** (gratis con Google/GitHub).
+2. Crea un proyecto: nombre `germania-db`, región `US East (Ohio)`.
+3. Desde el panel, copia la **Connection String**:
    ```
-2. En [Render Dashboard](https://dashboard.render.com/), haz clic en **New +** -> **Blueprint**.
-3. Selecciona tu repositorio `germania`.
-4. Render creará automáticamente la base de datos PostgreSQL (`germania-db`), el servicio web Python (`germania-web`), ejecutará `python init_db.py` y desplegará la aplicación con HTTPS gratuito.
+   postgresql://user:password@ep-xxx.us-east-2.aws.neon.tech/neondb?sslmode=require
+   ```
+4. En la **SQL Console** de Neon, pega y ejecuta el contenido de `database/schema_postgres.sql`.
+
+---
+
+### Paso 3 — Desplegar el Web Service en Render (Gratis)
+
+1. Ve a [dashboard.render.com](https://dashboard.render.com) → **New +** → **Web Service**.
+2. Conecta GitHub y selecciona el repositorio `germania`.
+3. Configuración del servicio:
+
+   | Campo | Valor |
+   |-------|-------|
+   | **Name** | `germania-web` |
+   | **Region** | `Ohio (US East)` |
+   | **Branch** | `main` |
+   | **Runtime** | `Python 3` |
+   | **Build Command** | `pip install -r requirements.txt` |
+   | **Start Command** | `gunicorn wsgi:app --workers 1 --threads 2 --timeout 120` |
+   | **Plan** | `Free` |
+
+4. En **Environment Variables**, agrega:
+
+   | Variable | Valor |
+   |----------|-------|
+   | `DATABASE_URL` | La connection string de Neon del Paso 2 |
+   | `FLASK_ENV` | `production` |
+   | `SECRET_KEY` | Cadena aleatoria segura |
+   | `JWT_SECRET_KEY` | Otra cadena aleatoria diferente |
+
+5. Haz clic en **Create Web Service**. Render construye y despliega automáticamente.
+6. **Inicializar datos semilla** (sólo la primera vez) — En Render → **Shell**:
+   ```bash
+   python init_db.py
+   ```
+
+---
+
+### Credenciales Demo (post-inicialización)
+
+| Rol | Documento | Contraseña |
+|-----|-----------|----------|
+| Rector | `1001` | `rector2026` |
+| Docente | `4001` | `docente2026` |
+| Secretaría | `3001` | `admin2026` |
+| Estudiante | `1065849201` | `estudiante2026` |
+
+---
+
+### Limitaciones del Plan Gratuito
+
+- **Render Free**: El servicio web **duerme** tras 15 min de inactividad; la primera petición tarda ~30s en despertar.
+- **Neon Free**: 0.5 GB almacenamiento, computa escala a cero automáticamente.
+- Ambos servicios son suficientes para el piloto del prototipo SENA.
