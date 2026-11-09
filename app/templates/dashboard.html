@@ -5,18 +5,23 @@
 {% block content %}
 <div class="space-y-6">
 
-  <!-- Encabezado de Bienvenida -->
+  <!-- Encabezado de Bienvenida y Acciones Rápidas -->
   <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
     <div>
       <h1 class="text-2xl font-black text-slate-900 tracking-tight">Panel de Control & Permanencia Escolar</h1>
       <p class="text-sm text-slate-500 mt-1">Supervisión en tiempo real de sedes veredales y Sistema de Alertas Tempranas (SAT).</p>
     </div>
-    <div class="flex items-center space-x-2">
+    <div class="flex flex-wrap items-center gap-2">
+      <!-- Botón Exportador SIMAT -->
+      <a href="/api/v1/reportes/simat" class="inline-flex items-center px-3.5 py-2 rounded-lg text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-sm transition">
+        <i class="fa-solid fa-file-excel mr-1.5"></i> Exportar SIMAT (CSV)
+      </a>
+      <!-- Botón Exportador IVE -->
+      <a href="/api/v1/reportes/ive-consolidado" class="inline-flex items-center px-3.5 py-2 rounded-lg text-xs font-bold bg-brand-700 hover:bg-brand-800 text-white shadow-sm transition">
+        <i class="fa-solid fa-file-csv mr-1.5"></i> Matriz IVE (CSV)
+      </a>
       <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
-        <span class="w-2 h-2 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span> Sistema Online (Render)
-      </span>
-      <span class="text-xs font-semibold px-3 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
-        Año Lectivo 2026 - P1
+        <span class="w-2 h-2 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span> Online
       </span>
     </div>
   </div>
@@ -165,4 +170,3 @@
 
 </div>
 {% endblock %}
-

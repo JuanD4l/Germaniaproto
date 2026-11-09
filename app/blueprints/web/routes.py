@@ -62,7 +62,6 @@ def login():
         }
         flash(f"¡Bienvenido(a), {usuario['nombre']}!", "success")
 
-        # Redirección según rol: Estudiantes a su Portal de Solo Lectura
         if usuario["rol_codigo"] in ["estudiante", "acudiente"]:
             return redirect(url_for("estudiante.portal"))
 
@@ -128,10 +127,134 @@ def dashboard():
     )
 
 
+@web_bp.route("/sat")
+@solo_personal_autorizado
+def sat_monitoreo():
+    """
+    Centro Integral SAT - Prevención de Deserción Escolar e Índice IVE.
+    Muestra la lista de todos los estudiantes clasificados con sus factores de riesgo.
+    """
+    estudiantes = query_db("""
+        SELECT e.id_estudiante, e.direccion, e.puntaje_esa,
+               u.nombre, u.apellido, u.tipo_documento, u.documento,
+               c.nombre AS curso_nombre, s.nombre AS sede_nombre
+        FROM estudiante e
+        JOIN usuario u ON u.id_usuario = e.id_usuario
+        JOIN matricula m ON m.id_estudiante = e.id_estudiante AND m.estado = 'activa'
+        JOIN curso c ON c.id_curso = m.id_curso
+        JOIN sede s ON s.id_sede = c.id_sede
+        ORDER BY c.nombre ASC, u.apellido ASC
+    """)
+
+    filtro = request.args.get("filtro", "todos")
+    estudiantes_sat = []
+
+    for est in estudiantes:
+        ive = calcular_ive_estudiante(est["id_estudiante"])
+        if filtro == "todos" or ive["nivel_riesgo"] == filtro:
+            estudiantes_sat.append({
+                **est,
+                **ive
+            })
+
+    # Ordenar por nivel de riesgo (rojo primero, luego naranja, luego verde)
+    prioridad = {"rojo": 1, "naranja": 2, "verde": 3}
+    estudiantes_sat.sort(key=lambda x: prioridad.get(x["nivel_riesgo"], 4))
+
+    return render_template(
+        "sat/monitoreo.html",
+        estudiantes=estudiantes_sat,
+        filtro_actual=filtro
+    )
+
+
+@web_bp.route("/sat/estudiante/<int:id_estudiante>")
+@solo_personal_autorizado
+def sat_ficha_estudiante(id_estudiante: int):
+    """
+    Ficha de Diagnóstico Integral IVE del Estudiante.
+    Radiografía de Ausentismo (50%), Rendimiento (30%) y Factores Socioeconómicos Rurales (20%).
+    """
+    estudiante = query_db("""
+        SELECT e.id_estudiante, e.direccion, e.fecha_nacimiento, e.puntaje_esa,
+               u.nombre, u.apellido, u.tipo_documento, u.documento, u.email, u.telefono,
+               c.nombre AS curso_nombre, c.grado, c.jornada,
+               s.nombre AS sede_nombre, s.direccion AS sede_direccion
+        FROM estudiante e
+        JOIN usuario u ON u.id_usuario = e.id_usuario
+        JOIN matricula m ON m.id_estudiante = e.id_estudiante AND m.estado = 'activa'
+        JOIN curso c ON c.id_curso = m.id_curso
+        JOIN sede s ON s.id_sede = c.id_sede
+        WHERE e.id_estudiante = %s
+    """, (id_estudiante,), one=True)
+
+    if not estudiante:
+        flash("Estudiante no encontrado.", "error")
+        return redirect(url_for("web.sat_monitoreo"))
+
+    ive = calcular_ive_estudiante(id_estudiante)
+
+    # Historial de inasistencias para posible justificación con excusa
+    asistencias = query_db("""
+        SELECT a.id_asistencia, a.fecha, a.estado, a.minutos_retraso, a.valor_inasistencia, a.observacion,
+               m.nombre AS materia_nombre
+        FROM asistencia a
+        JOIN horario h ON h.id_horario = a.id_horario
+        JOIN asignacion asig ON asig.id_asignacion = h.id_asignacion
+        JOIN materia m ON m.id_materia = asig.id_materia
+        WHERE a.id_estudiante = %s
+        ORDER BY a.fecha DESC
+    """, (id_estudiante,))
+
+    # Notas del estudiante
+    calificaciones = query_db("""
+        SELECT m.nombre AS materia_nombre, c.nota, c.fecha_registro
+        FROM calificacion c
+        JOIN asignacion a ON a.id_asignacion = c.id_asignacion
+        JOIN materia m ON m.id_materia = a.id_materia
+        WHERE c.id_estudiante = %s
+    """, (id_estudiante,))
+
+    return render_template(
+        "sat/ficha.html",
+        estudiante=estudiante,
+        ive=ive,
+        asistencias=asistencias,
+        calificaciones=calificaciones
+    )
+
+
+@web_bp.route("/sat/estudiante/<int:id_estudiante>/radicar-excusa", methods=["POST"])
+@solo_personal_autorizado
+def radicar_excusa(id_estudiante: int):
+    """
+    Radicación de Excusas Médicas / Calamidad (RF-20).
+    Neutraliza la inasistencia (valor_inasistencia = 0.0) y recalcula el IVE al instante.
+    """
+    id_asistencia = request.form.get("id_asistencia")
+    motivo = request.form.get("motivo", "Excusa justificada por acudiente")
+
+    if not id_asistencia:
+        flash("Debe seleccionar un registro de asistencia para justificar.", "error")
+        return redirect(url_for("web.sat_ficha_estudiante", id_estudiante=id_estudiante))
+
+    # Actualizar a 'excusa' y neutralizar ausentismo
+    execute_db("""
+        UPDATE asistencia
+        SET estado = 'excusa', valor_inasistencia = 0.0, observacion = %s
+        WHERE id_asistencia = %s AND id_estudiante = %s
+    """, (f"Excusa Aprobada: {motivo}", id_asistencia, id_estudiante))
+
+    nuevo_ive = calcular_ive_estudiante(id_estudiante)
+
+    flash(f"Excusa radicada exitosamente. Las inasistencias fueron neutralizadas. Nuevo IVE: {nuevo_ive['valor_ive']} (Semáforo: {nuevo_ive['nivel_riesgo'].upper()}).", "success")
+    return redirect(url_for("web.sat_ficha_estudiante", id_estudiante=id_estudiante))
+
+
 @web_bp.route("/matriculas", methods=["GET"])
 @solo_personal_autorizado
 def matriculas():
-    """Vista de Admisión y Matrícula Data-Light (Exclusivo Personal Autorizado)."""
+    """Vista de Admisión y Matrícula Data-Light."""
     cursos = query_db("""
         SELECT c.id_curso, c.nombre, c.grado, s.nombre AS sede_nombre
         FROM curso c
@@ -211,7 +334,7 @@ def crear_matricula_form():
 @web_bp.route("/horarios", methods=["GET"])
 @solo_personal_autorizado
 def horarios():
-    """Vista de gestión de malla horaria (Exclusivo Personal Autorizado)."""
+    """Vista de gestión de malla horaria."""
     asignaciones = query_db("""
         SELECT a.id_asignacion, m.nombre AS materia_nombre, c.nombre AS curso_nombre,
                u.nombre AS profesor_nombre, u.apellido AS profesor_apellido
@@ -282,7 +405,7 @@ def crear_horario_form():
 @web_bp.route("/asistencia", methods=["GET"])
 @solo_personal_autorizado
 def asistencia():
-    """Planilla diaria de asistencia docente (Exclusivo Docentes y Administrativos)."""
+    """Planilla diaria de asistencia docente."""
     hoy = date.today().isoformat()
 
     estudiantes = query_db("""

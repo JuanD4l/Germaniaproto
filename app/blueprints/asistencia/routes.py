@@ -7,70 +7,137 @@ from app.utils.responses import success_response, error_response
 
 def calcular_ive_estudiante(id_estudiante: int, id_periodo: int = 1):
     """
-    Motor Central de Vulnerabilidad Escolar:
+    Motor Central de Vulnerabilidad Escolar e Índice de Vulnerabilidad Escolar (IVE):
     IVE = (FA * 0.50) + (RA * 0.30) + (ESA * 0.20)
-    Semáforo:
-      - Verde: < 0.40
-      - Naranja: 0.40 - 0.69 o fallas >= 10%
-      - Rojo: >= 0.70 o fallas >= 15%
+
+    Variables Analizadas:
+    1. FA (Ausentismo - 50%):
+       - Clases totales, presentes, retrasos (0.5), ausencias (1.0), excusas (0.0).
+       - Porcentaje de fallas acumuladas.
+    2. RA (Rendimiento Académico - 30%):
+       - Promedio general (0.0 - 5.0) y cantidad de materias reprobadas (< 3.0).
+    3. ESA (Encuesta Socioeconómica de Vulnerabilidad Rural - 20%):
+       - Tiempo de desplazamiento rural, estrato, conectividad, apoyo en campo.
+
+    Semáforo de Prevención de Deserción:
+      - 🟢 Verde: IVE < 0.40 y fallas < 10% (Permanencia estable)
+      - 🟠 Naranja: IVE 0.40 - 0.69 o fallas >= 10% (Alerta temprana - monitoreo)
+      - 🔴 Rojo: IVE >= 0.70 o fallas >= 15% (Riesgo inminente de abandono escolar)
     """
-    # 1. Factor de Ausentismo (FA)
-    asistencias = query_db("""
+    # 1. FACTOR DE AUSENTISMO (FA - 50%)
+    conteo_asis = query_db("""
         SELECT COUNT(*) AS total_clases,
+               SUM(CASE WHEN estado = 'presente' THEN 1 ELSE 0 END) AS total_presente,
+               SUM(CASE WHEN estado = 'retraso' THEN 1 ELSE 0 END) AS total_retrasos,
+               SUM(CASE WHEN estado = 'ausente' THEN 1 ELSE 0 END) AS total_ausencias,
+               SUM(CASE WHEN estado = 'excusa' THEN 1 ELSE 0 END) AS total_excusas,
                SUM(valor_inasistencia) AS inasistencias_ponderadas
         FROM asistencia
         WHERE id_estudiante = %s
     """, (id_estudiante,), one=True)
 
-    total_clases = asistencias["total_clases"] if asistencias and asistencias["total_clases"] else 0
-    inasistencias_ponderadas = float(asistencias["inasistencias_ponderadas"] or 0.0) if asistencias else 0.0
+    total_clases = conteo_asis["total_clases"] if conteo_asis and conteo_asis["total_clases"] else 0
+    total_presente = conteo_asis["total_presente"] or 0 if conteo_asis else 0
+    total_retrasos = conteo_asis["total_retrasos"] or 0 if conteo_asis else 0
+    total_ausencias = conteo_asis["total_ausencias"] or 0 if conteo_asis else 0
+    total_excusas = conteo_asis["total_excusas"] or 0 if conteo_asis else 0
+    inasistencias_ponderadas = float(conteo_asis["inasistencias_ponderadas"] or 0.0) if conteo_asis else 0.0
 
     if total_clases > 0:
-        porcentaje_fallas = (inasistencias_ponderadas / total_clases) * 100.0
+        porcentaje_fallas = round((inasistencias_ponderadas / total_clases) * 100.0, 1)
         factor_fa = min(inasistencias_ponderadas / total_clases, 1.0)
     else:
         porcentaje_fallas = 0.0
         factor_fa = 0.0
 
-    # 2. Factor de Rendimiento Académico (RA)
+    # 2. FACTOR DE RENDIMIENTO ACADÉMICO (RA - 30%)
     calificaciones = query_db("""
-        SELECT AVG(nota) AS promedio_nota
+        SELECT COUNT(*) AS total_notas,
+               AVG(nota) AS promedio_nota,
+               SUM(CASE WHEN nota < 3.0 THEN 1 ELSE 0 END) AS materias_perdidas
         FROM calificacion
         WHERE id_estudiante = %s
     """, (id_estudiante,), one=True)
 
     promedio = float(calificaciones["promedio_nota"]) if calificaciones and calificaciones["promedio_nota"] is not None else 3.8
-    factor_ra = max(0.0, min(1.0, (5.0 - promedio) / 5.0))
+    materias_perdidas = calificaciones["materias_perdidas"] or 0 if calificaciones else 0
 
-    # 3. Factor Socioeconómico (ESA)
-    est = query_db("SELECT puntaje_esa FROM estudiante WHERE id_estudiante = %s", (id_estudiante,), one=True)
+    # Escala de nota 0.0 a 5.0 -> a menor nota o más materias perdidas, mayor vulnerabilidad
+    factor_ra_base = (5.0 - promedio) / 5.0
+    penalizacion_perdidas = min(materias_perdidas * 0.10, 0.30)
+    factor_ra = max(0.0, min(1.0, factor_ra_base + penalizacion_perdidas))
+
+    # 3. FACTOR SOCIOECONÓMICO Y VULNERABILIDAD RURAL (ESA - 20%)
+    est = query_db("""
+        SELECT puntaje_esa, direccion
+        FROM estudiante
+        WHERE id_estudiante = %s
+    """, (id_estudiante,), one=True)
+
     factor_esa = float(est["puntaje_esa"] or 0.20) if est else 0.20
 
-    # Fórmula ponderada estricta
+    # Factores cualitativos de la Ficha Socioeconómica Rural
+    factores_riesgo_esa = []
+    if factor_esa >= 0.50:
+        factores_riesgo_esa.append("Vulnerabilidad extrema / Dificultad severa de transporte rural")
+    elif factor_esa >= 0.30:
+        factores_riesgo_esa.append("Transporte rural > 45 min / Apoyo laboral agrícola familiar")
+    else:
+        factores_riesgo_esa.append("Condición socioeconómica regular de zona veredal")
+
+    # FÓRMULA PONDERADA ESTRICTA (Norma Germania PIC 2026)
     ive = (factor_fa * 0.50) + (factor_ra * 0.30) + (factor_esa * 0.20)
     ive = round(ive, 3)
 
-    # Determinar Semáforo
+    # DETERMINACIÓN DEL SEMÁFORO PEDAGÓGICO
     if ive >= 0.70 or porcentaje_fallas >= 15.0:
         semaforo = "rojo"
-        diagnostico = "Riesgo Crítico de Deserción Escolar"
+        diagnostico = "Riesgo Crítico: Deserción Escolar Inminente"
+        accion_sugerida = "Intervención Urgente de Rectoría: Visita domiciliaria y plan de permanencia inmediata."
     elif ive >= 0.40 or porcentaje_fallas >= 10.0:
         semaforo = "naranja"
-        diagnostico = "Riesgo Moderado - Monitoreo Preventivo"
+        diagnostico = "Riesgo Moderado: Alerta Temprana de Inasistencia / Bajo Rendimiento"
+        accion_sugerida = "Acompañamiento docente y citación pedagógica a acudiente."
     else:
         semaforo = "verde"
         diagnostico = "Permanencia Estable"
+        accion_sugerida = "Seguimiento periódico preventivo ordinario."
 
     return {
         "id_estudiante": id_estudiante,
         "valor_ive": ive,
+        "desglose": {
+            "aporte_ausentismo": round(factor_fa * 0.50, 3),
+            "aporte_rendimiento": round(factor_ra * 0.30, 3),
+            "aporte_socioeconomico": round(factor_esa * 0.20, 3),
+        },
+        "ausentismo": {
+            "total_clases": total_clases,
+            "total_presente": total_presente,
+            "total_retrasos": total_retrasos,
+            "total_ausencias": total_ausencias,
+            "total_excusas": total_excusas,
+            "inasistencias_ponderadas": inasistencias_ponderadas,
+            "porcentaje_fallas": porcentaje_fallas,
+            "factor_fa": round(factor_fa, 3)
+        },
+        "academico": {
+            "promedio": round(promedio, 2),
+            "materias_perdidas": materias_perdidas,
+            "factor_ra": round(factor_ra, 3)
+        },
+        "socioeconomico": {
+            "factor_esa": round(factor_esa, 3),
+            "factores_identificados": factores_riesgo_esa
+        },
         "factor_ausentismo": round(factor_fa, 3),
         "factor_rendimiento": round(factor_ra, 3),
         "factor_socioeconomico": round(factor_esa, 3),
-        "porcentaje_fallas": round(porcentaje_fallas, 1),
+        "porcentaje_fallas": porcentaje_fallas,
         "promedio_academico": round(promedio, 2),
         "nivel_riesgo": semaforo,
-        "diagnostico": diagnostico
+        "diagnostico": diagnostico,
+        "accion_sugerida": accion_sugerida
     }
 
 
@@ -106,17 +173,15 @@ def registrar_asistencia():
     else:
         id_usuario_registro = int(id_usuario_registro)
 
-    # Validar que el estudiante exista
     est_val = query_db("SELECT id_estudiante FROM estudiante WHERE id_estudiante = %s", (id_estudiante,), one=True)
     if not est_val:
         return error_response("El estudiante especificado no existe", status_code=404)
 
-    # Validar que el horario exista
     hor_val = query_db("SELECT id_horario FROM horario WHERE id_horario = %s", (id_horario,), one=True)
     if not hor_val:
         return error_response("El horario especificado no existe", status_code=404)
 
-    # Aplicar tiempos de gracia y cálculo normativo
+    # Tiempos de gracia normativos
     if estado == "excusa":
         valor_inasistencia = 0.0
     elif estado == "ausente" or minutos_retraso > 30:
@@ -129,7 +194,6 @@ def registrar_asistencia():
         estado = "presente"
         valor_inasistencia = 0.0
 
-    # Insertar o actualizar asistencia
     existente = query_db(
         "SELECT id_asistencia FROM asistencia WHERE id_estudiante = %s AND id_horario = %s AND fecha = %s",
         (id_estudiante, id_horario, fecha),
@@ -150,7 +214,6 @@ def registrar_asistencia():
         """, (id_estudiante, id_horario, fecha, estado, minutos_retraso, valor_inasistencia, observacion, id_usuario_registro))
         id_asistencia = res["lastrowid"]
 
-    # Recalcular IVE para el estudiante
     ive_info = calcular_ive_estudiante(id_estudiante)
 
     return success_response({
@@ -168,7 +231,6 @@ def registrar_asistencia():
 def sincronizar_batch_pwa():
     """
     Recepción de lotes JSON offline provenientes del Service Worker / IndexedDB (RF-10).
-    Procesa el array de registros e inserta/actualiza masivamente.
     """
     data = request.get_json(silent=True)
     if not data or "registros_asistencia" not in data:
@@ -177,7 +239,6 @@ def sincronizar_batch_pwa():
     registros = data["registros_asistencia"]
     id_docente = data.get("docente_id")
 
-    # Validar existencia de id_docente en BD
     usr = query_db("SELECT id_usuario FROM usuario WHERE id_usuario = %s", (id_docente,), one=True) if id_docente else None
     if not usr:
         primero = query_db("SELECT id_usuario FROM usuario LIMIT 1", one=True)
@@ -230,17 +291,14 @@ def sincronizar_batch_pwa():
 
 @asistencia_bp.route("/ive/estudiante/<int:id_estudiante>", methods=["GET"])
 def obtener_ive_estudiante(id_estudiante: int):
-    """Retorna el diagnóstico individual del Índice de Vulnerabilidad Escolar."""
+    """Retorna el diagnóstico integral del Índice de Vulnerabilidad Escolar."""
     diagnostico = calcular_ive_estudiante(id_estudiante)
     return success_response(diagnostico, "IVE calculado")
 
 
 @asistencia_bp.route("/ive/resumen", methods=["GET"])
 def resumen_institucional_ive():
-    """
-    Consolidado ejecutivo para Rectoría:
-    Distribución de estudiantes en el Semáforo (Verde, Naranja, Rojo) y alertas críticas.
-    """
+    """Consolidado ejecutivo para Rectoría y el Comité de Permanencia Escolar."""
     estudiantes = query_db("""
         SELECT e.id_estudiante, u.nombre, u.apellido, u.documento, c.nombre AS curso_nombre, s.nombre AS sede_nombre
         FROM estudiante e

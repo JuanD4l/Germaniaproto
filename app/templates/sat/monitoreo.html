@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block title %}Centro SAT - Prevención de Deserción Escolar (IVE) - Germania{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <!-- Encabezado del Módulo SAT -->
+  <div class="bg-gradient-to-r from-brand-900 to-slate-900 rounded-2xl p-6 text-white shadow-md border border-slate-700">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div>
+        <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-brand-500/20 text-brand-300 text-xs font-bold border border-brand-500/30 mb-2">
+          <i class="fa-solid fa-satellite-dish animate-pulse"></i>
+          <span>Sistema de Alertas Tempranas (SAT)</span>
+        </div>
+        <h1 class="text-2xl font-black tracking-tight">Monitoreo del Índice de Vulnerabilidad Escolar (IVE)</h1>
+        <p class="text-xs text-slate-300 mt-1 max-w-2xl">
+          Algoritmo predictivo continuo para prevenir la deserción en sedes rurales:
+          <strong>50% Factor Ausentismo (FA) + 30% Rendimiento Académico (RA) + 20% Vulnerabilidad Rural (ESA)</strong>.
+        </p>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <a href="/api/v1/reportes/ive-consolidado" class="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/20 transition flex items-center gap-1.5 shadow">
+          <i class="fa-solid fa-download"></i> Descargar Matriz CSV
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Barra de Filtros del Semáforo -->
+  <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex flex-wrap items-center justify-between gap-3">
+    <div class="flex items-center space-x-2">
+      <span class="text-xs font-bold uppercase tracking-wider text-slate-500 mr-2">Filtrar por Semáforo:</span>
+      <a href="{{ url_for('web.sat_monitoreo', filtro='todos') }}"
+         class="px-3 py-1.5 rounded-lg text-xs font-bold transition {% if filtro_actual == 'todos' %}bg-slate-900 text-white shadow{% else %}bg-slate-100 text-slate-700 hover:bg-slate-200{% endif %}">
+        Todos ({{ estudiantes|length }})
+      </a>
+      <a href="{{ url_for('web.sat_monitoreo', filtro='rojo') }}"
+         class="px-3 py-1.5 rounded-lg text-xs font-bold transition {% if filtro_actual == 'rojo' %}bg-red-600 text-white shadow{% else %}bg-red-50 text-red-700 hover:bg-red-100 border border-red-200{% endif %}">
+        🔴 Riesgo Crítico (&ge; 0.70)
+      </a>
+      <a href="{{ url_for('web.sat_monitoreo', filtro='naranja') }}"
+         class="px-3 py-1.5 rounded-lg text-xs font-bold transition {% if filtro_actual == 'naranja' %}bg-amber-500 text-white shadow{% else %}bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200{% endif %}">
+        🟠 Riesgo Medio (0.40 - 0.69)
+      </a>
+      <a href="{{ url_for('web.sat_monitoreo', filtro='verde') }}"
+         class="px-3 py-1.5 rounded-lg text-xs font-bold transition {% if filtro_actual == 'verde' %}bg-emerald-600 text-white shadow{% else %}bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200{% endif %}">
+        🟢 Estable (&lt; 0.40)
+      </a>
+    </div>
+
+    <div class="text-xs text-slate-500">
+      <i class="fa-solid fa-clock-rotate-left mr-1"></i> Actualización en tiempo real
+    </div>
+  </div>
+
+  <!-- Matriz Detallada de Estudiantes -->
+  <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-xs">
+        <thead class="bg-slate-100 uppercase text-slate-600 font-bold tracking-wider">
+          <tr>
+            <th class="p-3.5">Estudiante & Sede</th>
+            <th class="p-3.5 text-center">Inasistencias (FA 50%)</th>
+            <th class="p-3.5 text-center">Académico (RA 30%)</th>
+            <th class="p-3.5 text-center">Socioeconómico (ESA 20%)</th>
+            <th class="p-3.5 text-center">Índice IVE</th>
+            <th class="p-3.5 text-center">Semáforo</th>
+            <th class="p-3.5 text-center">Diagnóstico & Acción</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-200">
+          {% for est in estudiantes %}
+          <tr class="hover:bg-slate-50 transition">
+            <!-- Estudiante -->
+            <td class="p-3.5">
+              <div class="font-bold text-slate-900 text-sm">{{ est.nombre }} {{ est.apellido }}</div>
+              <div class="text-[11px] text-slate-500 font-mono mt-0.5">{{ est.tipo_documento }} {{ est.documento }}</div>
+              <div class="text-[11px] text-brand-800 font-medium mt-0.5">{{ est.curso_nombre }} • {{ est.sede_nombre }}</div>
+            </td>
+
+            <!-- Factor Ausentismo -->
+            <td class="p-3.5 text-center">
+              <div class="font-black text-sm {% if est.ausentismo.porcentaje_fallas >= 15 %}text-red-600{% elif est.ausentismo.porcentaje_fallas >= 10 %}text-amber-600{% else %}text-slate-800{% endif %}">
+                {{ est.ausentismo.porcentaje_fallas }}% Fallas
+              </div>
+              <div class="text-[10px] text-slate-500 mt-0.5">
+                {{ est.ausentismo.total_ausencias }} ausentes • {{ est.ausentismo.total_retrasos }} retrasos
+              </div>
+              <div class="text-[10px] font-bold text-emerald-700">
+                {{ est.ausentismo.total_excusas }} excusas válidas
+              </div>
+            </td>
+
+            <!-- Factor Rendimiento -->
+            <td class="p-3.5 text-center">
+              <div class="font-black text-sm {% if est.academico.promedio < 3.0 %}text-red-600{% elif est.academico.promedio < 3.8 %}text-amber-600{% else %}text-emerald-700{% endif %}">
+                {{ est.academico.promedio }} Promedio
+              </div>
+              <div class="text-[10px] text-slate-500 mt-0.5">
+                {% if est.academico.materias_perdidas > 0 %}
+                  <span class="text-red-600 font-bold">{{ est.academico.materias_perdidas }} materias en riesgo</span>
+                {% else %}
+                  <span class="text-emerald-600 font-medium">Materias al día</span>
+                {% endif %}
+              </div>
+            </td>
+
+            <!-- Factor Socioeconómico -->
+            <td class="p-3.5 text-center">
+              <div class="font-mono font-bold text-sm text-slate-800">{{ est.socioeconomico.factor_esa }}</div>
+              <div class="text-[10px] text-slate-500 max-w-[180px] mx-auto truncate" title="{{ est.socioeconomico.factores_identificados[0] }}">
+                {{ est.socioeconomico.factores_identificados[0] }}
+              </div>
+            </td>
+
+            <!-- Valor IVE Calculado -->
+            <td class="p-3.5 text-center">
+              <div class="text-lg font-black tracking-tight font-mono
+                {% if est.nivel_riesgo == 'rojo' %}text-red-600{% elif est.nivel_riesgo == 'naranja' %}text-amber-600{% else %}text-emerald-700{% endif %}">
+                {{ est.valor_ive }}
+              </div>
+              <div class="text-[10px] text-slate-500 font-mono">
+                FA:{{ est.desglose.aporte_ausentismo }} + RA:{{ est.desglose.aporte_rendimiento }} + ESA:{{ est.desglose.aporte_socioeconomico }}
+              </div>
+            </td>
+
+            <!-- Semáforo -->
+            <td class="p-3.5 text-center">
+              {% if est.nivel_riesgo == 'rojo' %}
+                <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-red-100 text-red-800 border border-red-200">
+                  🔴 Crítico
+                </span>
+              {% elif est.nivel_riesgo == 'naranja' %}
+                <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200">
+                  🟠 Alerta
+                </span>
+              {% else %}
+                <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200">
+                  🟢 Estable
+                </span>
+              {% endif %}
+            </td>
+
+            <!-- Acción / Ficha -->
+            <td class="p-3.5 text-center">
+              <a href="{{ url_for('web.sat_ficha_estudiante', id_estudiante=est.id_estudiante) }}"
+                 class="inline-flex items-center px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-brand-800 text-white font-bold text-xs shadow-sm transition">
+                <i class="fa-solid fa-id-card-clip mr-1.5"></i> Ver Ficha SAT
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+
+{% block title %}Ficha Clínica SAT - IVE: {{ estudiante.nombre }} {{ estudiante.apellido }} - Germania{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <!-- Volver y Barra de Estado -->
+  <div class="flex items-center justify-between">
+    <a href="{{ url_for('web.sat_monitoreo') }}" class="text-xs font-bold text-slate-600 hover:text-brand-800 transition flex items-center">
+      <i class="fa-solid fa-arrow-left mr-1.5"></i> Volver al Centro SAT
+    </a>
+    <span class="text-xs font-mono font-bold text-slate-500">
+      Ficha SAT ID #{{ estudiante.id_estudiante }} • Sede {{ estudiante.sede_nombre }}
+    </span>
+  </div>
+
+  <!-- Tarjeta de Identificación y Diagnóstico -->
+  <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+    <div class="flex items-center space-x-4">
+      <div class="w-16 h-16 rounded-2xl flex items-center justify-center font-bold text-2xl border
+        {% if ive.nivel_riesgo == 'rojo' %}bg-red-50 text-red-600 border-red-200{% elif ive.nivel_riesgo == 'naranja' %}bg-amber-50 text-amber-600 border-amber-200{% else %}bg-emerald-50 text-emerald-600 border-emerald-200{% endif %}">
+        <i class="fa-solid fa-person-circle-exclamation"></i>
+      </div>
+      <div>
+        <h1 class="text-2xl font-black text-slate-900 tracking-tight">{{ estudiante.nombre }} {{ estudiante.apellido }}</h1>
+        <p class="text-xs text-slate-500 mt-0.5">
+          Doc: <span class="font-mono font-bold text-slate-700">{{ estudiante.tipo_documento }} {{ estudiante.documento }}</span> • {{ estudiante.curso_nombre }} • Jornada {{ estudiante.jornada }}
+        </p>
+        <p class="text-xs text-slate-500 mt-0.5">
+          <i class="fa-solid fa-location-dot text-slate-400 mr-1"></i> Residencia: {{ estudiante.direccion }}
+        </p>
+      </div>
+    </div>
+
+    <!-- Badge del Semáforo IVE -->
+    <div class="bg-slate-50 rounded-xl p-4 border border-slate-200 text-center min-w-[200px]">
+      <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-500">Índice IVE Calculado</span>
+      <div class="text-3xl font-black font-mono my-1
+        {% if ive.nivel_riesgo == 'rojo' %}text-red-600{% elif ive.nivel_riesgo == 'naranja' %}text-amber-600{% else %}text-emerald-700{% endif %}">
+        {{ ive.valor_ive }}
+      </div>
+      <div class="mt-1">
+        {% if ive.nivel_riesgo == 'rojo' %}
+          <span class="px-3 py-1 rounded-full text-xs font-black uppercase bg-red-100 text-red-800 border border-red-300">
+            🔴 Riesgo Crítico Deserción
+          </span>
+        {% elif ive.nivel_riesgo == 'naranja' %}
+          <span class="px-3 py-1 rounded-full text-xs font-black uppercase bg-amber-100 text-amber-800 border border-amber-300">
+            🟠 Riesgo Medio Preventivo
+          </span>
+        {% else %}
+          <span class="px-3 py-1 rounded-full text-xs font-black uppercase bg-emerald-100 text-emerald-800 border border-emerald-300">
+            🟢 Permanencia Estable
+          </span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Diagnóstico y Plan de Acción Institucional -->
+  <div class="p-4 rounded-xl border flex items-start gap-3
+    {% if ive.nivel_riesgo == 'rojo' %}bg-red-50 border-red-200 text-red-900{% elif ive.nivel_riesgo == 'naranja' %}bg-amber-50 border-amber-200 text-amber-900{% else %}bg-emerald-50 border-emerald-200 text-emerald-900{% endif %}">
+    <i class="fa-solid fa-circle-info text-lg mt-0.5 opacity-80"></i>
+    <div>
+      <div class="font-bold text-xs uppercase tracking-wide">Protocolo SAT Sugerido:</div>
+      <div class="text-sm font-semibold mt-0.5">{{ ive.diagnostico }}</div>
+      <div class="text-xs opacity-90 mt-1">{{ ive.accion_sugerida }}</div>
+    </div>
+  </div>
+
+  <!-- Desglose Matemático de los 3 Pilares del IVE -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+    <!-- Pilar 1: Ausentismo (50%) -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 border-t-4 border-t-purple-600">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-xs font-bold uppercase tracking-wider text-slate-700">1. Factor Ausentismo (50%)</h2>
+        <span class="text-xs font-mono font-bold text-purple-700">+{{ ive.desglose.aporte_ausentismo }} IVE</span>
+      </div>
+      <div class="text-2xl font-black text-slate-900">{{ ive.ausentismo.porcentaje_fallas }}% Fallas</div>
+      <p class="text-xs text-slate-500 mt-1">Límite crítico institucional: &ge; 15%</p>
+
+      <div class="mt-4 space-y-2 text-xs border-t border-slate-100 pt-3">
+        <div class="flex justify-between">
+          <span class="text-slate-600">Clases programadas:</span>
+          <span class="font-bold">{{ ive.ausentismo.total_clases }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-600">Ausencias totales (>30 min):</span>
+          <span class="font-bold text-red-600">{{ ive.ausentismo.total_ausencias }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-600">Retrasos (16-30 min):</span>
+          <span class="font-bold text-amber-600">{{ ive.ausentismo.total_retrasos }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-600">Excusas aprobadas:</span>
+          <span class="font-bold text-emerald-600">{{ ive.ausentismo.total_excusas }} (0.0 falta)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pilar 2: Rendimiento Académico (30%) -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 border-t-4 border-t-blue-600">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-xs font-bold uppercase tracking-wider text-slate-700">2. Rendimiento (30%)</h2>
+        <span class="text-xs font-mono font-bold text-blue-700">+{{ ive.desglose.aporte_rendimiento }} IVE</span>
+      </div>
+      <div class="text-2xl font-black text-slate-900">{{ ive.academico.promedio }} Promedio</div>
+      <p class="text-xs text-slate-500 mt-1">Escala nacional 0.0 - 5.0</p>
+
+      <div class="mt-4 space-y-2 text-xs border-t border-slate-100 pt-3">
+        <div class="flex justify-between">
+          <span class="text-slate-600">Materias en riesgo (&lt; 3.0):</span>
+          <span class="font-bold {% if ive.academico.materias_perdidas > 0 %}text-red-600{% else %}text-emerald-600{% endif %}">
+            {{ ive.academico.materias_perdidas }} asignaturas
+          </span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-600">Notas registradas:</span>
+          <span class="font-bold">{{ calificaciones|length }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-600">Puntaje factor RA:</span>
+          <span class="font-bold font-mono">{{ ive.academico.factor_ra }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pilar 3: Vulnerabilidad Rural ESA (20%) -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 border-t-4 border-t-amber-500">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-xs font-bold uppercase tracking-wider text-slate-700">3. Ficha Rural ESA (20%)</h2>
+        <span class="text-xs font-mono font-bold text-amber-700">+{{ ive.desglose.aporte_socioeconomico }} IVE</span>
+      </div>
+      <div class="text-2xl font-black text-slate-900 font-mono">{{ ive.socioeconomico.factor_esa }} Puntaje</div>
+      <p class="text-xs text-slate-500 mt-1">Entorno rural veredal</p>
+
+      <div class="mt-4 space-y-2 text-xs border-t border-slate-100 pt-3">
+        {% for factor in ive.socioeconomico.factores_identificados %}
+        <div class="p-2 rounded bg-amber-50 border border-amber-200 text-amber-900 font-medium">
+          <i class="fa-solid fa-triangle-exclamation mr-1 text-amber-600"></i> {{ factor }}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+    <!-- Radicación de Excusas (RF-20) -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+      <h2 class="text-base font-bold text-slate-900 mb-2 flex items-center">
+        <i class="fa-solid fa-file-medical text-brand-600 mr-2"></i> Radicar Excusa y Neutralizar Inasistencia (RF-20)
+      </h2>
+      <p class="text-xs text-slate-500 mb-4">
+        Aprobar una excusa médica o calamidad neutraliza la inasistencia (falla = 0.0), reduciendo el ausentismo y recuperando al estudiante en el Semáforo IVE.
+      </p>
+
+      <form method="POST" action="{{ url_for('web.radicar_excusa', id_estudiante=estudiante.id_estudiante) }}" class="space-y-4">
+        <div>
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Seleccionar Clase con Inasistencia</label>
+          <select name="id_asistencia" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
+            {% for asis in asistencias %}
+              {% if asis.estado in ['ausente', 'retraso'] %}
+                <option value="{{ asis.id_asistencia }}">
+                  {{ asis.fecha }} • {{ asis.materia_nombre }} (Estado: {{ asis.estado }} - Falla: {{ asis.valor_inasistencia }})
+                </option>
+              {% endif %}
+            {% endfor %}
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Motivo / Soporte de la Excusa</label>
+          <input type="text" name="motivo" required placeholder="Ej: Incapacidad médica puesto de salud Germania / Calamidad doméstica"
+                 class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
+        </div>
+
+        <button type="submit" class="w-full py-2.5 px-4 rounded-lg bg-brand-700 hover:bg-brand-800 text-white font-bold text-xs shadow transition">
+          <i class="fa-solid fa-check-double mr-1"></i> Aprobar Excusa y Recalcular IVE
+        </button>
+      </form>
+    </div>
+
+    <!-- Historial Detallado de Clases y Asistencia -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-base font-bold text-slate-900 flex items-center">
+          <i class="fa-solid fa-list-check text-brand-600 mr-2"></i> Registro de Asistencia del Periodo
+        </h2>
+        <span class="text-xs font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-700">{{ asistencias|length }} Clases</span>
+      </div>
+
+      <div class="overflow-x-auto max-h-[300px] overflow-y-auto">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-slate-100 uppercase text-slate-600 font-bold sticky top-0">
+            <tr>
+              <th class="p-2.5">Fecha</th>
+              <th class="p-2.5">Materia</th>
+              <th class="p-2.5 text-center">Estado</th>
+              <th class="p-2.5 text-center">Falla Ponderada</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200">
+            {% for a in asistencias %}
+            <tr class="hover:bg-slate-50">
+              <td class="p-2.5 font-mono text-slate-700">{{ a.fecha }}</td>
+              <td class="p-2.5 font-bold text-slate-900">{{ a.materia_nombre }}</td>
+              <td class="p-2.5 text-center">
+                {% if a.estado == 'presente' %}
+                  <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">Presente</span>
+                {% elif a.estado == 'retraso' %}
+                  <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">Retraso ({{ a.minutos_retraso }}m)</span>
+                {% elif a.estado == 'excusa' %}
+                  <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800">Excusado (0.0)</span>
+                {% else %}
+                  <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-800">Ausente (1.0)</span>
+                {% endif %}
+              </td>
+              <td class="p-2.5 text-center font-bold font-mono">{{ a.valor_inasistencia }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}

@@ -138,3 +138,4 @@ def portal():
         historial_asistencia=historial_asistencia,
         actividades=actividades
     )
+

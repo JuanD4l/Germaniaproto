@@ -22,12 +22,14 @@ def create_app(config_name="development"):
     from app.blueprints.asistencia import asistencia_bp
     from app.blueprints.web import web_bp
     from app.blueprints.estudiante import estudiante_bp
+    from app.blueprints.reportes import reportes_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(academico_bp)
     app.register_blueprint(asistencia_bp)
     app.register_blueprint(web_bp)
     app.register_blueprint(estudiante_bp)
+    app.register_blueprint(reportes_bp)
 
     # Handlers globales de error HTTP para peticiones JSON
     @app.errorhandler(400)
