@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+
+{% block title %}Asistencia PWA & Semáforo - Germania{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-black text-slate-900 tracking-tight">Pase de Lista Diario & Tiempos de Gracia</h1>
+      <p class="text-sm text-slate-500 mt-1">Marcación con cálculo automático de inasistencia ponderada y actualización del IVE.</p>
+    </div>
+    <div class="flex items-center space-x-2">
+      <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-brand-100 text-brand-800">
+        <i class="fa-solid fa-wifi mr-1.5"></i> PWA Offline Ready
+      </span>
+      <span class="text-xs font-bold px-3 py-1 rounded-full bg-slate-100 text-slate-700">
+        Fecha: {{ fecha_actual }}
+      </span>
+    </div>
+  </div>
+
+  <!-- Reglas Normativas Visibles -->
+  <div class="bg-brand-50 border border-brand-200 rounded-xl p-4 text-xs text-brand-900 flex flex-wrap gap-4 items-center justify-between">
+    <div class="flex items-center gap-2">
+      <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+      <strong>0 - 15 min:</strong> Presente (Falla: 0.0)
+    </div>
+    <div class="flex items-center gap-2">
+      <span class="w-3 h-3 rounded-full bg-amber-500"></span>
+      <strong>16 - 30 min:</strong> Retraso (Falla: 0.5)
+    </div>
+    <div class="flex items-center gap-2">
+      <span class="w-3 h-3 rounded-full bg-red-500"></span>
+      <strong>&gt; 30 min:</strong> Inasistencia (Falla: 1.0)
+    </div>
+    <div class="flex items-center gap-2">
+      <span class="w-3 h-3 rounded-full bg-blue-500"></span>
+      <strong>Excusa Médica / Justificada:</strong> Neutraliza Ausencia (0.0)
+    </div>
+  </div>
+
+  <!-- Planilla de Asistencia Interactiva -->
+  <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 pb-4 border-b border-slate-200">
+      <div>
+        <h2 class="text-base font-bold text-slate-900">Planilla de Clase: Matemáticas (Grado 6° A)</h2>
+        <p class="text-xs text-slate-500">Horario: Lunes 07:00 - 08:30 • Aula 101 • Sede Principal Santa Ana</p>
+      </div>
+      <div class="text-xs font-bold text-slate-600 bg-slate-100 px-3 py-1.5 rounded-lg">
+        {{ estudiantes|length }} Estudiantes Registrados
+      </div>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-xs">
+        <thead class="bg-slate-100 uppercase text-slate-600 font-bold">
+          <tr>
+            <th class="p-3">Estudiante</th>
+            <th class="p-3">Documento</th>
+            <th class="p-3 text-center">Estado de Asistencia</th>
+            <th class="p-3 text-center">Minutos Retardo</th>
+            <th class="p-3 text-center">Ponderación Falla</th>
+            <th class="p-3 text-center">Semáforo IVE</th>
+            <th class="p-3 text-center">Acción</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-200">
+          {% for est in estudiantes %}
+          <tr class="hover:bg-slate-50 transition" id="row-{{ est.id_estudiante }}">
+            <td class="p-3 font-bold text-slate-900 text-sm">
+              {{ est.nombre }} {{ est.apellido }}
+            </td>
+            <td class="p-3 font-mono text-slate-600">{{ est.tipo_documento }} {{ est.documento }}</td>
+
+            <!-- Selección de Estado -->
+            <td class="p-3 text-center">
+              <select id="estado-{{ est.id_estudiante }}" onchange="actualizarMinutos({{ est.id_estudiante }})"
+                      class="border border-slate-300 rounded px-2 py-1 text-xs font-semibold focus:ring-1 focus:ring-brand-500">
+                <option value="presente" {% if est.asistencia_hoy == 'presente' %}selected{% endif %}>🟢 Presente</option>
+                <option value="retraso" {% if est.asistencia_hoy == 'retraso' %}selected{% endif %}>🟠 Retraso</option>
+                <option value="ausente" {% if est.asistencia_hoy == 'ausente' %}selected{% endif %}>🔴 Ausente</option>
+                <option value="excusa" {% if est.asistencia_hoy == 'excusa' %}selected{% endif %}>🔵 Excusa</option>
+              </select>
+            </td>
+
+            <!-- Minutos de Retardo -->
+            <td class="p-3 text-center">
+              <input type="number" min="0" max="120" id="minutos-{{ est.id_estudiante }}"
+                     value="{{ est.minutos_retraso_hoy or 0 }}"
+                     class="w-16 text-center border border-slate-300 rounded px-1.5 py-1 text-xs font-mono font-bold">
+            </td>
+
+            <!-- Ponderación -->
+            <td class="p-3 text-center font-bold" id="valor-{{ est.id_estudiante }}">
+              {{ est.valor_inasistencia_hoy or 0.0 }}
+            </td>
+
+            <!-- Semáforo IVE Calculado -->
+            <td class="p-3 text-center" id="semaforo-{{ est.id_estudiante }}">
+              {% if est.ive.nivel_riesgo == 'rojo' %}
+                <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-red-100 text-red-800">
+                  🔴 Rojo ({{ est.ive.valor_ive }})
+                </span>
+              {% elif est.ive.nivel_riesgo == 'naranja' %}
+                <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-amber-100 text-amber-800">
+                  🟠 Naranja ({{ est.ive.valor_ive }})
+                </span>
+              {% else %}
+                <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-emerald-100 text-emerald-800">
+                  🟢 Verde ({{ est.ive.valor_ive }})
+                </span>
+              {% endif %}
+            </td>
+
+            <!-- Botón Guardar / Sincronizar -->
+            <td class="p-3 text-center">
+              <button onclick="guardarAsistencia({{ est.id_estudiante }})"
+                      class="px-3 py-1 rounded bg-brand-700 hover:bg-brand-800 text-white font-bold text-xs shadow transition">
+                <i class="fa-solid fa-check mr-1"></i> Marcar
+              </button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+  function actualizarMinutos(idEst) {
+    const estado = document.getElementById(`estado-${idEst}`).value;
+    const inputMin = document.getElementById(`minutos-${idEst}`);
+    if (estado === 'presente' || estado === 'excusa') {
+      inputMin.value = 0;
+    } else if (estado === 'retraso' && inputMin.value == 0) {
+      inputMin.value = 20;
+    } else if (estado === 'ausente' && inputMin.value == 0) {
+      inputMin.value = 45;
+    }
+  }
+
+  async function guardarAsistencia(idEst) {
+    const estado = document.getElementById(`estado-${idEst}`).value;
+    const minutos = parseInt(document.getElementById(`minutos-${idEst}`).value) || 0;
+
+    const payload = {
+      id_estudiante: idEst,
+      id_horario: 1,
+      fecha: '{{ fecha_actual }}',
+      estado: estado,
+      minutos_retraso: minutos
+    };
+
+    try {
+      const res = await fetch('/api/v1/asistencia/registrar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.success) {
+        document.getElementById(`valor-${idEst}`).innerText = data.data.valor_inasistencia;
+        const ive = data.data.ive;
+        let badge = '';
+        if (ive.nivel_riesgo === 'rojo') {
+          badge = `<span class="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-red-100 text-red-800">🔴 Rojo (${ive.valor_ive})</span>`;
+        } else if (ive.nivel_riesgo === 'naranja') {
+          badge = `<span class="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-amber-100 text-amber-800">🟠 Naranja (${ive.valor_ive})</span>`;
+        } else {
+          badge = `<span class="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-emerald-100 text-emerald-800">🟢 Verde (${ive.valor_ive})</span>`;
+        }
+        document.getElementById(`semaforo-${idEst}`).innerHTML = badge;
+        alert(`Asistencia guardada para estudiante ${idEst}. Semáforo: ${ive.nivel_riesgo.toUpperCase()}`);
+      } else {
+        alert('Error: ' + data.error);
+      }
+    } catch (e) {
+      alert('Error en conexión: ' + e.message);
+    }
+  }
+</script>
+{% endblock %}

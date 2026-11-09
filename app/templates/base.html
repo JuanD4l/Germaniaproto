@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full bg-slate-50">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Germania - Sistema de Gestión Escolar y SAT{% endblock %}</title>
+  <!-- Tailwind CSS Data-Light (Optimizado) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0fdf4',
+              100: '#dcfce7',
+              500: '#22c55e',
+              600: '#16a34a',
+              700: '#15803d',
+              800: '#166534',
+              900: '#14532d',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    /* Data-Light optimizations */
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; }
+  </style>
+</head>
+<body class="h-full flex flex-col text-slate-800">
+
+  <!-- Barra de Navegación Institucional -->
+  <header class="bg-brand-900 text-white shadow-md border-b-4 border-brand-500">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <div class="flex items-center space-x-3">
+          <a href="{{ url_for('web.dashboard') }}" class="flex items-center space-x-2">
+            <div class="w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center font-bold text-brand-100 text-lg border border-white/20">
+              G
+            </div>
+            <div>
+              <span class="font-bold text-lg tracking-tight">GERMANIA</span>
+              <span class="text-xs block text-brand-100 font-medium tracking-wide">IE Santa Ana • SAT Rural</span>
+            </div>
+          </a>
+        </div>
+
+        <nav class="hidden md:flex items-center space-x-1">
+          <a href="{{ url_for('web.dashboard') }}" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-brand-800 transition">
+            <i class="fa-solid fa-chart-pie mr-1.5 opacity-80"></i> Dashboard
+          </a>
+          <a href="{{ url_for('web.matriculas') }}" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-brand-800 transition">
+            <i class="fa-solid fa-user-graduate mr-1.5 opacity-80"></i> Matrículas
+          </a>
+          <a href="{{ url_for('web.horarios') }}" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-brand-800 transition">
+            <i class="fa-solid fa-calendar-days mr-1.5 opacity-80"></i> Horarios
+          </a>
+          <a href="{{ url_for('web.asistencia') }}" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-brand-800 transition">
+            <i class="fa-solid fa-clipboard-check mr-1.5 opacity-80"></i> Asistencia PWA
+          </a>
+        </nav>
+
+        <div class="flex items-center space-x-3">
+          {% if session.get('user') %}
+            <div class="text-right hidden sm:block">
+              <div class="text-xs font-semibold uppercase tracking-wider text-brand-100">{{ session['user']['rol_nombre'] }}</div>
+              <div class="text-sm font-bold truncate max-w-[150px]">{{ session['user']['nombre'] }}</div>
+            </div>
+            <a href="{{ url_for('web.logout') }}" class="inline-flex items-center px-3 py-1.5 border border-white/20 rounded-md text-xs font-semibold text-white bg-white/10 hover:bg-white/20 transition">
+              <i class="fa-solid fa-right-from-bracket mr-1"></i> Salir
+            </a>
+          {% else %}
+            <a href="{{ url_for('web.login') }}" class="inline-flex items-center px-4 py-1.5 border border-transparent rounded-md text-xs font-bold text-brand-900 bg-white hover:bg-brand-50 transition shadow">
+              Iniciar Sesión
+            </a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Contenedor Principal -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="mb-5 space-y-2">
+          {% for category, message in messages %}
+            <div class="p-4 rounded-lg text-sm font-medium border flex items-center justify-between
+              {% if category == 'error' %}bg-red-50 text-red-800 border-red-200{% elif category == 'success' %}bg-emerald-50 text-emerald-800 border-emerald-200{% else %}bg-blue-50 text-blue-800 border-blue-200{% endif %}">
+              <div>{{ message }}</div>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Pie de Página Institucional -->
+  <footer class="bg-white border-t border-slate-200 py-4 mt-auto">
+    <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-2">
+      <div>
+        <strong>Germania SIE & SAT</strong> — Institución Educativa Santa Ana (Valledupar, Cesar)
+      </div>
+      <div class="flex items-center space-x-4">
+        <span><i class="fa-solid fa-signal mr-1 text-emerald-600"></i> Data-Light 2G/3G Ready</span>
+        <span>•</span>
+        <span>SENA ADSO 2026</span>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

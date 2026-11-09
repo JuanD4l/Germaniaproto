@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}Malla Horaria - Germania{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-black text-slate-900 tracking-tight">Gestión de Malla Horaria & Salones</h1>
+      <p class="text-sm text-slate-500 mt-1">Prevención matemática de colisiones de profesor y aula.</p>
+    </div>
+    <span class="inline-flex items-center text-xs font-bold text-slate-600 bg-white border border-slate-200 px-3 py-1.5 rounded-lg shadow-sm">
+      <i class="fa-solid fa-clock text-brand-600 mr-1.5"></i> 0 Colisiones Garantizado
+    </span>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <!-- Formulario de Asignación Horaria -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:col-span-1">
+      <h2 class="text-base font-bold text-slate-900 mb-4 flex items-center">
+        <i class="fa-solid fa-calendar-plus mr-2 text-brand-600"></i> Programar Bloque de Clase
+      </h2>
+
+      <form method="POST" action="{{ url_for('web.crear_horario_form') }}" class="space-y-4">
+        <div>
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Materia, Curso & Docente</label>
+          <select name="id_asignacion" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none">
+            {% for a in asignaciones %}
+              <option value="{{ a.id_asignacion }}">{{ a.materia_nombre }} - {{ a.curso_nombre }} (Prof. {{ a.profesor_nombre }} {{ a.profesor_apellido }})</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Día de la Semana</label>
+          <select name="dia_semana" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none">
+            <option value="lunes">Lunes</option>
+            <option value="martes">Martes</option>
+            <option value="miercoles">Miércoles</option>
+            <option value="jueves">Jueves</option>
+            <option value="viernes">Viernes</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Hora Inicio</label>
+            <input type="time" name="hora_inicio" required value="08:30"
+                   class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Hora Fin</label>
+            <input type="time" name="hora_fin" required value="10:00"
+                   class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Aula / Salón</label>
+          <input type="text" name="aula" required value="Aula 101"
+                 class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none">
+        </div>
+
+        <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 text-[11px] text-slate-600">
+          <i class="fa-solid fa-circle-info text-blue-600 mr-1"></i>
+          <strong>Regla:</strong> Si el profesor o el aula ya están ocupados en ese intervalo, el sistema bloqueará la acción con error <code class="text-red-700">HTTP 422</code>.
+        </div>
+
+        <button type="submit" class="w-full py-2.5 px-4 rounded-lg bg-brand-700 hover:bg-brand-800 text-white font-bold text-sm shadow transition">
+          <i class="fa-solid fa-floppy-disk mr-1"></i> Guardar Bloque
+        </button>
+      </form>
+    </div>
+
+    <!-- Malla de Horarios Programados -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:col-span-2">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-base font-bold text-slate-900">Programación de Clases Semanales</h2>
+        <span class="text-xs font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-700">{{ horarios|length }} Bloques</span>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-slate-100 uppercase text-slate-600 font-bold">
+            <tr>
+              <th class="p-3">Día</th>
+              <th class="p-3">Horario</th>
+              <th class="p-3">Materia & Curso</th>
+              <th class="p-3">Docente</th>
+              <th class="p-3 text-center">Aula</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200">
+            {% for h in horarios %}
+            <tr class="hover:bg-slate-50">
+              <td class="p-3 font-bold uppercase text-brand-800">{{ h.dia_semana }}</td>
+              <td class="p-3 font-semibold text-slate-700 font-mono">{{ h.hora_inicio }} - {{ h.hora_fin }}</td>
+              <td class="p-3 font-bold text-slate-900">{{ h.materia_nombre }} <span class="font-normal text-slate-500">({{ h.curso_nombre }})</span></td>
+              <td class="p-3 text-slate-700">Prof. {{ h.profesor_nombre }} {{ h.profesor_apellido }}</td>
+              <td class="p-3 text-center">
+                <span class="px-2 py-0.5 rounded bg-slate-100 border border-slate-200 font-mono font-bold text-slate-800">
+                  {{ h.aula }}
+                </span>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}

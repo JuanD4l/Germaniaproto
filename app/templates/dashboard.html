@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard Ejecutivo - Germania{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <!-- Encabezado de Bienvenida -->
+  <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-black text-slate-900 tracking-tight">Panel de Control & Permanencia Escolar</h1>
+      <p class="text-sm text-slate-500 mt-1">Supervisión en tiempo real de sedes veredales y Sistema de Alertas Tempranas (SAT).</p>
+    </div>
+    <div class="flex items-center space-x-2">
+      <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span> Sistema Online (Render)
+      </span>
+      <span class="text-xs font-semibold px-3 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
+        Año Lectivo 2026 - P1
+      </span>
+    </div>
+  </div>
+
+  <!-- Métricas Clave (KPIs) -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Matrícula Activa</span>
+        <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+          <i class="fa-solid fa-users"></i>
+        </div>
+      </div>
+      <div class="text-3xl font-black text-slate-900 mt-2">{{ total_estudiantes }}</div>
+      <div class="text-xs text-slate-500 mt-1">100% Cero duplicados</div>
+    </div>
+
+    <!-- Semáforo Verde -->
+    <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm border-l-4 border-l-emerald-500">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-bold uppercase tracking-wider text-emerald-700">Riesgo Bajo (Verde)</span>
+        <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+          <i class="fa-solid fa-shield-halved"></i>
+        </div>
+      </div>
+      <div class="text-3xl font-black text-slate-900 mt-2">{{ semaforo['verde'] }}</div>
+      <div class="text-xs text-emerald-600 font-medium mt-1">Permanencia estable (&lt; 0.40 IVE)</div>
+    </div>
+
+    <!-- Semáforo Naranja -->
+    <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm border-l-4 border-l-amber-500">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-bold uppercase tracking-wider text-amber-700">Riesgo Medio (Naranja)</span>
+        <div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+      </div>
+      <div class="text-3xl font-black text-slate-900 mt-2">{{ semaforo['naranja'] }}</div>
+      <div class="text-xs text-amber-600 font-medium mt-1">Monitoreo docente (0.40 - 0.69)</div>
+    </div>
+
+    <!-- Semáforo Rojo -->
+    <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm border-l-4 border-l-red-500">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-bold uppercase tracking-wider text-red-700">Alerta Crítica (Rojo)</span>
+        <div class="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center font-bold">
+          <i class="fa-solid fa-bell"></i>
+        </div>
+      </div>
+      <div class="text-3xl font-black text-red-600 mt-2">{{ semaforo['rojo'] }}</div>
+      <div class="text-xs text-red-600 font-medium mt-1">Intervención Rectoría (&ge; 0.70)</div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <!-- Red de Sedes Institucionales -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:col-span-1">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-base font-bold text-slate-900">Sedes Educativas</h2>
+        <span class="text-xs font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-600">{{ sedes|length }} Sedes</span>
+      </div>
+      <div class="space-y-3">
+        {% for s in sedes %}
+        <div class="p-3 rounded-lg border border-slate-200 bg-slate-50 flex items-start justify-between">
+          <div>
+            <div class="font-bold text-sm text-slate-800 flex items-center gap-1.5">
+              {{ s.nombre }}
+              {% if s.es_principal %}
+                <span class="px-1.5 py-0.5 rounded text-[10px] font-black bg-brand-100 text-brand-800 uppercase tracking-wider">Principal</span>
+              {% endif %}
+            </div>
+            <div class="text-xs text-slate-500 mt-0.5"><i class="fa-solid fa-location-dot mr-1"></i> {{ s.direccion }}</div>
+          </div>
+          <span class="text-xs font-bold px-2 py-1 bg-white border border-slate-200 rounded text-slate-700">
+            {{ s.total_cursos }} cursos
+          </span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Alertas Activas del Semáforo IVE -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:col-span-2">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h2 class="text-base font-bold text-slate-900">Estudiantes en Seguimiento SAT (IVE)</h2>
+          <p class="text-xs text-slate-500">Cálculo: 50% Ausentismo + 30% Rendimiento + 20% Factor Socioeconómico</p>
+        </div>
+        <a href="{{ url_for('web.asistencia') }}" class="text-xs font-bold text-brand-700 hover:text-brand-800">
+          Registrar Asistencia &rarr;
+        </a>
+      </div>
+
+      {% if estudiantes_riesgo %}
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-slate-100 uppercase text-slate-600 font-bold">
+            <tr>
+              <th class="p-3">Estudiante</th>
+              <th class="p-3">Curso / Sede</th>
+              <th class="p-3 text-center">% Fallas</th>
+              <th class="p-3 text-center">Promedio</th>
+              <th class="p-3 text-center">IVE</th>
+              <th class="p-3 text-center">Semáforo</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200">
+            {% for r in estudiantes_riesgo %}
+            <tr class="hover:bg-slate-50">
+              <td class="p-3 font-bold text-slate-900">{{ r.nombre }} {{ r.apellido }}</td>
+              <td class="p-3 text-slate-600">{{ r.curso_nombre }} • {{ r.sede_nombre }}</td>
+              <td class="p-3 text-center font-bold text-slate-800">{{ r.porcentaje_fallas }}%</td>
+              <td class="p-3 text-center font-bold text-slate-800">{{ r.promedio_academico }}</td>
+              <td class="p-3 text-center font-black text-slate-900">{{ r.valor_ive }}</td>
+              <td class="p-3 text-center">
+                {% if r.nivel_riesgo == 'rojo' %}
+                  <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-red-100 text-red-800 border border-red-200">
+                    🔴 Crítico
+                  </span>
+                {% elif r.nivel_riesgo == 'naranja' %}
+                  <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200">
+                    🟠 Alerta
+                  </span>
+                {% else %}
+                  <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200">
+                    🟢 Estable
+                  </span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="p-8 text-center bg-slate-50 rounded-lg border border-dashed border-slate-300">
+        <i class="fa-solid fa-check-circle text-3xl text-emerald-500 mb-2"></i>
+        <div class="font-bold text-sm text-slate-800">Cero casos en riesgo crítico en este momento</div>
+        <p class="text-xs text-slate-500 mt-1">Todos los estudiantes se encuentran en nivel verde de permanencia.</p>
+      </div>
+      {% endif %}
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}
