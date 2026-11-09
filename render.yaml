@@ -1,14 +1,12 @@
 services:
-  # ================================================================
-  # Servicio Web Flask — Plan Free (750 h/mes, duerme tras 15 min inactivo)
-  # ================================================================
+  # Servicio Web Flask en Render
   - type: web
     name: germania-web
     runtime: python
     region: ohio
     plan: free
-    buildCommand: pip install -r requirements.txt && python init_db.py
-    startCommand: gunicorn wsgi:app --workers 1 --threads 2 --timeout 120
+    buildCommand: "pip install -r requirements.txt && python init_db.py"
+    startCommand: "gunicorn wsgi:app --workers 1 --threads 2 --timeout 120"
     envVars:
       - key: FLASK_ENV
         value: production
@@ -16,9 +14,15 @@ services:
         generateValue: true
       - key: JWT_SECRET_KEY
         generateValue: true
-      # DATABASE_URL se configura manualmente en el dashboard de Render
-      # apuntando a Neon (PostgreSQL gratuito externo)
-      # Formato: postgresql://user:password@host/dbname?sslmode=require
       - key: DATABASE_URL
-        sync: false
+        fromDatabase:
+          name: germania-db
+          property: connectionString
 
+databases:
+  # Base de Datos PostgreSQL Gestionada directamente en Render
+  - name: germania-db
+    databaseName: colegio_rural
+    user: germania_admin
+    region: ohio
+    plan: free
