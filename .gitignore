@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv/
+
+# Base de datos y logs locales
+*.db
+*.sqlite
+*.sqlite3
+test_*.db
+*.log
+
+# Variables de entorno con credenciales secretas
+.env
+
+# Pruebas y cobertura
+.coverage
+htmlcov/
+.pytest_cache/
+
+# IDEs y sistemas operativos
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Render y temporales
+*.swp
+*.bak
