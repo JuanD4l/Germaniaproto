@@ -1,5 +1,7 @@
 services:
-  # Servicio Web Flask en Render
+  # ================================================================
+  # Servicio Web Flask en Render (Plan Free: 750h/mes, sin costo)
+  # ================================================================
   - type: web
     name: germania-web
     runtime: python
@@ -14,15 +16,7 @@ services:
         generateValue: true
       - key: JWT_SECRET_KEY
         generateValue: true
+      # DATABASE_URL: Se conecta a la base de datos PostgreSQL gratuita de Neon.tech
+      # Formato: postgresql://usuario:clave@host/neondb?sslmode=require
       - key: DATABASE_URL
-        fromDatabase:
-          name: germania-db
-          property: connectionString
-
-databases:
-  # Base de Datos PostgreSQL Gestionada directamente en Render
-  - name: germania-db
-    databaseName: colegio_rural
-    user: germania_admin
-    region: ohio
-    plan: free
+        sync: false
