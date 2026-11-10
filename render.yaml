@@ -1,21 +1,20 @@
 services:
   # ================================================================
-  # Servicio Web Flask en Render (Plan Free: 750h/mes, sin costo)
+  # Servicio Web Flask Autónomo en Render (100% Free, sin BD externa)
   # ================================================================
   - type: web
     name: germania-web
     runtime: python
     region: ohio
     plan: free
-    buildCommand: "pip install -r requirements.txt"
+    buildCommand: "pip install -r requirements.txt && python init_db.py"
     startCommand: "gunicorn wsgi:app --workers 1 --threads 2 --timeout 120"
     envVars:
       - key: FLASK_ENV
         value: production
+      - key: DB_TYPE
+        value: sqlite
       - key: SECRET_KEY
         generateValue: true
       - key: JWT_SECRET_KEY
         generateValue: true
-      # DATABASE_URL: Conexión externa a PostgreSQL (Neon.tech)
-      - key: DATABASE_URL
-        sync: false
