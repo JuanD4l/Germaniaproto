@@ -7,7 +7,7 @@ services:
     runtime: python
     region: ohio
     plan: free
-    buildCommand: "pip install -r requirements.txt && python init_db.py"
+    buildCommand: "pip install -r requirements.txt"
     startCommand: "gunicorn wsgi:app --workers 1 --threads 2 --timeout 120"
     envVars:
       - key: FLASK_ENV
@@ -16,7 +16,6 @@ services:
         generateValue: true
       - key: JWT_SECRET_KEY
         generateValue: true
-      # DATABASE_URL: Se conecta a la base de datos PostgreSQL gratuita de Neon.tech
-      # Formato: postgresql://usuario:clave@host/neondb?sslmode=require
+      # DATABASE_URL: Conexión externa a PostgreSQL (Neon.tech)
       - key: DATABASE_URL
         sync: false
