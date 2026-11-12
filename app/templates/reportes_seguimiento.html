@@ -1,0 +1,252 @@
+{% extends "base.html" %}
+
+{% block title %}Seguimiento y Reportes Académicos — Germania{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <!-- Header -->
+  <div>
+    <h1 class="text-2xl font-black text-slate-900 tracking-tight">Seguimiento y Reportes Académicos</h1>
+    <p class="text-xs text-slate-500 mt-0.5">Visualización de datos y alertas de riesgo para el grupo seleccionado</p>
+  </div>
+
+  <!-- Barra de Filtros -->
+  <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+    <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
+      <div>
+        <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Sede</label>
+        <select class="w-full text-xs font-medium border border-slate-200 rounded-xl p-2.5 bg-slate-50">
+          <option selected>Sede Principal</option>
+          <option>Sede Rural La Vega</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Grupo</label>
+        <select class="w-full text-xs font-semibold border border-slate-200 rounded-xl p-2.5 bg-slate-50">
+          <option selected>Matemáticas 9-A</option>
+          <option>Grado 6° A</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Asignatura</label>
+        <select class="w-full text-xs font-medium border border-slate-200 rounded-xl p-2.5 bg-slate-50">
+          <option selected>Matemáticas</option>
+          <option>Cálculo Integral</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Periodo</label>
+        <div class="flex gap-2">
+          <select class="w-full text-xs font-medium border border-slate-200 rounded-xl p-2.5 bg-slate-50">
+            <option selected>2° Periodo</option>
+            <option>1° Periodo</option>
+          </select>
+          <button class="px-5 py-2.5 bg-indigo-950 hover:bg-indigo-900 text-white rounded-xl text-xs font-bold shadow transition">
+            Consultar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cuadrícula de Gráficas: Notas por Actividad y Donut Inasistencias -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+    <!-- Gráfica 1: Promedio de Notas por Actividad -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+      <div class="flex items-center justify-between">
+        <h2 class="text-sm font-black text-slate-900 tracking-tight">Promedio de Notas por Actividad</h2>
+        <button class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+      </div>
+
+      <div class="space-y-3 pt-2">
+        <!-- Parcial Álgebra -->
+        <div>
+          <div class="flex justify-between text-xs font-bold mb-1">
+            <span class="text-slate-700 uppercase text-[10px]">Parcial Álgebra</span>
+            <span class="text-slate-900">4.2</span>
+          </div>
+          <div class="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
+            <div class="h-full bg-indigo-950 rounded-full" style="width: 84%;"></div>
+          </div>
+        </div>
+
+        <!-- Taller Geometría -->
+        <div>
+          <div class="flex justify-between text-xs font-bold mb-1">
+            <span class="text-slate-700 uppercase text-[10px]">Taller Geometría</span>
+            <span class="text-slate-900">3.8</span>
+          </div>
+          <div class="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
+            <div class="h-full bg-indigo-900 rounded-full" style="width: 76%;"></div>
+          </div>
+        </div>
+
+        <!-- Quiz Funciones -->
+        <div>
+          <div class="flex justify-between text-xs font-bold mb-1">
+            <span class="text-slate-700 uppercase text-[10px]">Quiz Funciones</span>
+            <span class="text-slate-900">4.5</span>
+          </div>
+          <div class="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
+            <div class="h-full bg-indigo-950 rounded-full" style="width: 90%;"></div>
+          </div>
+        </div>
+
+        <!-- Proyecto Final -->
+        <div>
+          <div class="flex justify-between text-xs font-bold mb-1">
+            <span class="text-slate-700 uppercase text-[10px]">Proyecto Final</span>
+            <span class="text-slate-900">3.1</span>
+          </div>
+          <div class="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
+            <div class="h-full bg-indigo-700 rounded-full" style="width: 62%;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gráfica 2: Distribución de Inasistencias (Donut) -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+      <div class="flex items-center justify-between">
+        <h2 class="text-sm font-black text-slate-900 tracking-tight">Distribución de Inasistencias</h2>
+        <span class="text-slate-400"><i class="fa-solid fa-chart-pie"></i></span>
+      </div>
+
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-8 pt-2">
+        <!-- Donut Visual -->
+        <div class="relative w-36 h-36 flex items-center justify-center">
+          <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+            <circle cx="18" cy="18" r="14" fill="none" class="stroke-slate-100" stroke-width="4"></circle>
+            <!-- Salud 45% -->
+            <circle cx="18" cy="18" r="14" fill="none" class="stroke-blue-600" stroke-width="4" stroke-dasharray="40 100" stroke-dashoffset="0"></circle>
+            <!-- Sin Justificar 25% -->
+            <circle cx="18" cy="18" r="14" fill="none" class="stroke-red-500" stroke-width="4" stroke-dasharray="22 100" stroke-dashoffset="-40"></circle>
+            <!-- Clima 20% -->
+            <circle cx="18" cy="18" r="14" fill="none" class="stroke-sky-400" stroke-width="4" stroke-dasharray="18 100" stroke-dashoffset="-62"></circle>
+            <!-- Cosecha 10% -->
+            <circle cx="18" cy="18" r="14" fill="none" class="stroke-amber-400" stroke-width="4" stroke-dasharray="9 100" stroke-dashoffset="-80"></circle>
+          </svg>
+          <div class="absolute text-center">
+            <div class="text-2xl font-black text-slate-900 leading-none">42</div>
+            <div class="text-[9px] uppercase font-bold text-slate-400 mt-0.5">Total Faltas</div>
+          </div>
+        </div>
+
+        <!-- Leyenda Rural -->
+        <div class="space-y-2 text-xs">
+          <div class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-blue-600"></span>
+            <span class="font-medium text-slate-700">Salud (45%)</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-red-500"></span>
+            <span class="font-medium text-slate-700">Sin Justificar (25%)</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-sky-400"></span>
+            <span class="font-medium text-slate-700">Clima (20%)</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-amber-400"></span>
+            <span class="font-medium text-slate-700">Cosecha (10%)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Alerta de Riesgo Académico Banner -->
+  <div class="p-4 bg-red-50/70 border border-red-200 rounded-2xl flex items-center gap-3">
+    <div class="w-8 h-8 rounded-xl bg-red-100 text-red-600 flex items-center justify-center text-sm shrink-0">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+    </div>
+    <div>
+      <div class="font-bold text-red-800 text-xs">Alerta de Riesgo Académico</div>
+      <div class="text-[11px] text-red-700">Estudiantes con rendimiento o asistencia por debajo del umbral institucional.</div>
+    </div>
+  </div>
+
+  <!-- Tabla: Estudiantes en Mayor Riesgo -->
+  <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+    <div class="p-4 border-b border-slate-200">
+      <h2 class="text-sm font-black text-slate-900 tracking-tight">Estudiantes en Mayor Riesgo</h2>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-xs">
+        <thead class="bg-slate-50 uppercase text-slate-400 font-bold tracking-wider border-b border-slate-200">
+          <tr>
+            <th class="p-3.5">Estudiante</th>
+            <th class="p-3.5 text-center">Promedio Actual</th>
+            <th class="p-3.5 text-center">% Asistencia</th>
+            <th class="p-3.5 text-center">Acción</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          <tr class="hover:bg-slate-50 transition">
+            <td class="p-3.5 flex items-center gap-3">
+              <div class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center font-bold text-slate-700">MR</div>
+              <div>
+                <div class="font-bold text-slate-900">Mateo Rodríguez</div>
+                <div class="text-[10px] text-slate-400 font-mono">ID: 1092348</div>
+              </div>
+            </td>
+            <td class="p-3.5 text-center">
+              <span class="px-2.5 py-1 rounded-lg bg-red-100 text-red-700 font-black text-xs">2.8</span>
+            </td>
+            <td class="p-3.5 text-center">
+              <span class="font-black text-red-600">72%</span>
+            </td>
+            <td class="p-3.5 text-center">
+              <a href="{{ url_for('web.sat_monitoreo') }}" class="font-bold text-indigo-950 hover:underline">Ver Seguimiento &gt;</a>
+            </td>
+          </tr>
+
+          <tr class="hover:bg-slate-50 transition">
+            <td class="p-3.5 flex items-center gap-3">
+              <div class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center font-bold text-slate-700">IL</div>
+              <div>
+                <div class="font-bold text-slate-900">Isabella López</div>
+                <div class="text-[10px] text-slate-400 font-mono">ID: 1092551</div>
+              </div>
+            </td>
+            <td class="p-3.5 text-center">
+              <span class="px-2.5 py-1 rounded-lg bg-red-100 text-red-700 font-black text-xs">3.1</span>
+            </td>
+            <td class="p-3.5 text-center">
+              <span class="font-black text-amber-600">88%</span>
+            </td>
+            <td class="p-3.5 text-center">
+              <a href="{{ url_for('web.sat_monitoreo') }}" class="font-bold text-indigo-950 hover:underline">Ver Seguimiento &gt;</a>
+            </td>
+          </tr>
+
+          <tr class="hover:bg-slate-50 transition">
+            <td class="p-3.5 flex items-center gap-3">
+              <div class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center font-bold text-slate-700">LG</div>
+              <div>
+                <div class="font-bold text-slate-900">Lucas Garzón</div>
+                <div class="text-[10px] text-slate-400 font-mono">ID: 1092882</div>
+              </div>
+            </td>
+            <td class="p-3.5 text-center">
+              <span class="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 font-black text-xs">4.0</span>
+            </td>
+            <td class="p-3.5 text-center">
+              <span class="font-black text-red-600">65%</span>
+            </td>
+            <td class="p-3.5 text-center">
+              <a href="{{ url_for('web.sat_monitoreo') }}" class="font-bold text-indigo-950 hover:underline">Ver Seguimiento &gt;</a>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+

@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% block title %}Planilla de Calificaciones — Germania{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <!-- Encabezado -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-black text-slate-900 tracking-tight">Planilla de Calificaciones</h1>
+      <p class="text-sm text-slate-500 mt-1">Registro periódico por materias. Período cerrado bloquea edición automáticamente.</p>
+    </div>
+    {% if periodo_actual %}
+    <span class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-bold border
+      {% if periodo_actual.estado == 'abierto' %}bg-emerald-50 text-emerald-800 border-emerald-300{% else %}bg-red-50 text-red-800 border-red-300{% endif %}">
+      <i class="fa-solid {% if periodo_actual.estado == 'abierto' %}fa-lock-open{% else %}fa-lock{% endif %} mr-1.5"></i>
+      Período {{ periodo_actual.numero }} — {{ periodo_actual.estado|capitalize }}
+    </span>
+    {% endif %}
+  </div>
+
+  <!-- Filtros -->
+  <form method="GET" class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 flex flex-wrap gap-4 items-end">
+    <div>
+      <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Curso</label>
+      <select name="id_curso" class="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none" onchange="this.form.submit()">
+        {% for c in cursos %}
+          <option value="{{ c.id_curso }}" {% if c.id_curso == id_curso_sel %}selected{% endif %}>{{ c.nombre }} ({{ c.sede_nombre }})</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Período</label>
+      <select name="id_periodo" class="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none" onchange="this.form.submit()">
+        {% for p in periodos %}
+          <option value="{{ p.id_periodo }}" {% if p.id_periodo == id_periodo_sel %}selected{% endif %}>
+            {{ p.anio }} — Período {{ p.numero }} ({{ p.estado }})
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+    <noscript><button type="submit" class="px-4 py-2 bg-brand-700 text-white rounded-lg text-sm font-bold">Filtrar</button></noscript>
+  </form>
+
+  <!-- Escala Pedagógica -->
+  <div class="bg-brand-50 border border-brand-200 rounded-xl p-4 text-xs text-brand-900 flex flex-wrap gap-4 items-center">
+    <span class="font-bold uppercase tracking-wider text-brand-800">Escala Nacional (0.0 — 5.0):</span>
+    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-red-500"></span><strong>0.0 – 2.9:</strong> Bajo</span>
+    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-amber-500"></span><strong>3.0 – 3.9:</strong> Básico</span>
+    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-blue-500"></span><strong>4.0 – 4.5:</strong> Alto</span>
+    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-emerald-500"></span><strong>4.6 – 5.0:</strong> Superior</span>
+  </div>
+
+  <!-- Tabla de Calificaciones -->
+  {% if estudiantes and materias %}
+  <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+    <div class="p-4 border-b border-slate-200 flex items-center justify-between">
+      <h2 class="text-base font-bold text-slate-900">
+        <i class="fa-solid fa-table-list mr-2 text-brand-600"></i>
+        {{ estudiantes|length }} Estudiantes — {{ materias|length }} Materias
+      </h2>
+      <span class="text-xs text-slate-500">
+        {% if periodo_actual and periodo_actual.estado == 'cerrado' %}
+          <i class="fa-solid fa-lock text-red-500 mr-1"></i> Edición bloqueada (período cerrado)
+        {% else %}
+          <i class="fa-solid fa-pencil text-brand-600 mr-1"></i> Haga clic en una nota para editar
+        {% endif %}
+      </span>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-xs">
+        <thead class="bg-slate-100 uppercase text-slate-600 font-bold tracking-wider">
+          <tr>
+            <th class="p-3 sticky left-0 bg-slate-100 z-10">Estudiante</th>
+            {% for mat in materias %}
+            <th class="p-3 text-center min-w-[120px]">{{ mat.materia_nombre }}</th>
+            {% endfor %}
+            <th class="p-3 text-center bg-slate-200">Promedio</th>
+            <th class="p-3 text-center bg-slate-200">Mat. Perdidas</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-200">
+          {% for est in estudiantes %}
+          <tr class="hover:bg-slate-50 transition">
+            <td class="p-3 sticky left-0 bg-white hover:bg-slate-50 z-10 border-r border-slate-200">
+              <div class="font-bold text-slate-900">{{ est.nombre }} {{ est.apellido }}</div>
+              <div class="text-[10px] font-mono text-slate-500">{{ est.tipo_documento }} {{ est.documento }}</div>
+            </td>
+
+            {% for mat in materias %}
+            <td class="p-2 text-center">
+              {% set nota_val = est.notas.get(mat.id_asignacion) %}
+              {% if periodo_actual and periodo_actual.estado == 'abierto' %}
+              <form method="POST" action="{{ url_for('calificaciones.registrar_nota') }}" class="inline">
+                <input type="hidden" name="id_estudiante" value="{{ est.id_estudiante }}">
+                <input type="hidden" name="id_asignacion" value="{{ mat.id_asignacion }}">
+                <input type="hidden" name="id_periodo" value="{{ id_periodo_sel }}">
+                <input type="hidden" name="id_curso" value="{{ id_curso_sel }}">
+                <input type="number" name="nota" step="0.1" min="0" max="5"
+                       value="{{ nota_val if nota_val is not none else '' }}"
+                       placeholder="—"
+                       onblur="this.form.submit()"
+                       class="w-16 text-center border rounded px-1 py-1 text-sm font-bold focus:ring-1 focus:ring-brand-500 focus:outline-none
+                              {% if nota_val is not none %}
+                                {% if nota_val < 3.0 %}border-red-300 bg-red-50 text-red-700
+                                {% elif nota_val < 4.0 %}border-amber-300 bg-amber-50 text-amber-700
+                                {% elif nota_val < 4.6 %}border-blue-300 bg-blue-50 text-blue-700
+                                {% else %}border-emerald-300 bg-emerald-50 text-emerald-700{% endif %}
+                              {% else %}border-slate-300{% endif %}">
+              </form>
+              {% else %}
+              <span class="font-bold text-sm
+                {% if nota_val is not none %}
+                  {% if nota_val < 3.0 %}text-red-600{% elif nota_val < 4.0 %}text-amber-600{% elif nota_val < 4.6 %}text-blue-600{% else %}text-emerald-700{% endif %}
+                {% else %}text-slate-400{% endif %}">
+                {{ nota_val if nota_val is not none else '—' }}
+              </span>
+              {% endif %}
+            </td>
+            {% endfor %}
+
+            <!-- Promedio -->
+            <td class="p-3 text-center bg-slate-50 font-black text-sm
+              {% if est.promedio is not none %}
+                {% if est.promedio < 3.0 %}text-red-600{% elif est.promedio < 4.0 %}text-amber-600{% else %}text-emerald-700{% endif %}
+              {% else %}text-slate-400{% endif %}">
+              {{ est.promedio if est.promedio is not none else '—' }}
+            </td>
+
+            <!-- Materias Perdidas -->
+            <td class="p-3 text-center bg-slate-50">
+              {% if est.materias_perdidas > 0 %}
+                <span class="px-2 py-0.5 rounded-full text-[11px] font-black bg-red-100 text-red-800 border border-red-200">
+                  {{ est.materias_perdidas }} perdida{{ 's' if est.materias_perdidas > 1 else '' }}
+                </span>
+              {% else %}
+                <span class="text-emerald-600 font-bold text-xs">✓ Al día</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {% else %}
+  <div class="bg-white rounded-xl border border-dashed border-slate-300 p-12 text-center">
+    <i class="fa-solid fa-clipboard-list text-4xl text-slate-300 mb-3"></i>
+    <div class="font-bold text-slate-600">Seleccione un curso y período para ver la planilla</div>
+    <p class="text-xs text-slate-500 mt-1">O verifique que el curso tenga asignaciones y estudiantes matriculados.</p>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
+

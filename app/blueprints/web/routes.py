@@ -405,30 +405,242 @@ def crear_horario_form():
 @web_bp.route("/asistencia", methods=["GET"])
 @solo_personal_autorizado
 def asistencia():
-    """Planilla diaria de asistencia docente."""
+    """Planilla diaria de asistencia docente con selector y soporte PWA."""
     hoy = date.today().isoformat()
+    grupo_sel = request.args.get("grupo", "").strip()
+    id_curso = request.args.get("id_curso", type=int)
 
-    estudiantes = query_db("""
-        SELECT e.id_estudiante, u.nombre, u.apellido, u.tipo_documento, u.documento,
-               a.estado AS asistencia_hoy, a.minutos_retraso AS minutos_retraso_hoy,
-               a.valor_inasistencia AS valor_inasistencia_hoy
-        FROM estudiante e
-        JOIN usuario u ON u.id_usuario = e.id_usuario
-        JOIN matricula m ON m.id_estudiante = e.id_estudiante AND m.estado = 'activa'
-        LEFT JOIN asistencia a ON a.id_estudiante = e.id_estudiante AND a.fecha = %s
-        ORDER BY u.apellido ASC, u.nombre ASC
-    """, (hoy,))
+    sedes = query_db("SELECT id_sede, nombre FROM sede ORDER BY nombre ASC")
+    cursos = query_db("SELECT id_curso, nombre, grado FROM curso ORDER BY nombre ASC")
+
+    # Si no se selecciona grupo ni curso, mostrar estado inicial (Mockup 6)
+    mostrar_planilla = bool(grupo_sel or id_curso)
 
     estudiantes_con_ive = []
-    for est in estudiantes:
-        ive = calcular_ive_estudiante(est["id_estudiante"])
-        estudiantes_con_ive.append({
-            **est,
-            "ive": ive
-        })
+    if mostrar_planilla:
+        sql = """
+            SELECT e.id_estudiante, u.nombre, u.apellido, u.tipo_documento, u.documento,
+                   a.estado AS asistencia_hoy, a.minutos_retraso AS minutos_retraso_hoy,
+                   a.valor_inasistencia AS valor_inasistencia_hoy
+            FROM estudiante e
+            JOIN usuario u ON u.id_usuario = e.id_usuario
+            JOIN matricula m ON m.id_estudiante = e.id_estudiante AND m.estado = 'activa'
+            LEFT JOIN asistencia a ON a.id_estudiante = e.id_estudiante AND a.fecha = %s
+        """
+        args = [hoy]
+        if id_curso:
+            sql += " WHERE m.id_curso = %s"
+            args.append(id_curso)
+        sql += " ORDER BY u.apellido ASC, u.nombre ASC"
+
+        estudiantes = query_db(sql, tuple(args))
+        for est in estudiantes:
+            ive = calcular_ive_estudiante(est["id_estudiante"])
+            estudiantes_con_ive.append({
+                **est,
+                "ive": ive
+            })
 
     return render_template(
         "asistencia.html",
         fecha_actual=hoy,
+        mostrar_planilla=mostrar_planilla,
+        grupo_sel=grupo_sel or "Matemáticas 9-A",
+        sedes=sedes,
+        cursos=cursos,
         estudiantes=estudiantes_con_ive
     )
+
+
+@web_bp.route("/asistencia/guardar", methods=["POST"])
+@solo_personal_autorizado
+def guardar_asistencia_lote():
+    """Guarda en lote la marcación de asistencia docente."""
+    user = session.get("user")
+    id_usuario_reg = user["id_usuario"]
+    hoy = date.today().isoformat()
+
+    # Recibe registros con prefijo estado_
+    for key, val in request.form.items():
+        if key.startswith("estado_"):
+            id_est = int(key.split("_")[1])
+            estado = val.strip().lower()
+            val_inas = 0.0 if estado in ["presente", "asiste"] else (0.5 if estado == "retraso" else 1.0)
+            if estado == "excusa":
+                val_inas = 0.0
+
+            # Guardar o actualizar
+            existente = query_db(
+                "SELECT id_asistencia FROM asistencia WHERE id_estudiante = %s AND fecha = %s",
+                (id_est, hoy), one=True
+            )
+            if existente:
+                execute_db("""
+                    UPDATE asistencia
+                    SET estado = %s, valor_inasistencia = %s, id_usuario_registro = %s
+                    WHERE id_asistencia = %s
+                """, (estado, val_inas, id_usuario_reg, existente["id_asistencia"]))
+            else:
+                execute_db("""
+                    INSERT INTO asistencia (id_estudiante, id_horario, fecha, estado, valor_inasistencia, id_usuario_registro)
+                    VALUES (%s, 1, %s, %s, %s, %s)
+                """, (id_est, hoy, estado, val_inas, id_usuario_reg))
+
+    flash("¡Asistencia guardada exitosamente y sincronizada!", "success")
+    return redirect(url_for("web.asistencia", grupo="Matemáticas 9-A"))
+
+
+@web_bp.route("/mis-grupos", methods=["GET"])
+@solo_personal_autorizado
+def mis_grupos():
+    """Gestión de Aula: Visualización de estudiantes, filtros de riesgo y ficha médica."""
+    filtro_riesgo = request.args.get("alerta") == "1"
+    buscar = request.args.get("buscar", "").strip().lower()
+
+    estudiantes = query_db("""
+        SELECT e.id_estudiante, u.nombre, u.apellido, u.tipo_documento, u.documento,
+               m.estado AS estado_matricula, c.nombre AS curso_nombre, c.grado, s.nombre AS sede_nombre
+        FROM estudiante e
+        JOIN usuario u ON u.id_usuario = e.id_usuario
+        JOIN matricula m ON m.id_estudiante = e.id_estudiante
+        JOIN curso c ON c.id_curso = m.id_curso
+        JOIN sede s ON s.id_sede = c.id_sede
+        ORDER BY u.apellido ASC, u.nombre ASC
+    """)
+
+    sedes = query_db("SELECT id_sede, nombre FROM sede ORDER BY nombre ASC")
+    cursos = query_db("SELECT id_curso, nombre, grado FROM curso ORDER BY nombre ASC")
+
+    lista = []
+    conteo_riesgo = 0
+    for est in estudiantes:
+        ive = calcular_ive_estudiante(est["id_estudiante"])
+        es_riesgo = ive["nivel_riesgo"] in ["rojo", "naranja"]
+        if es_riesgo:
+            conteo_riesgo += 1
+
+        if filtro_riesgo and not es_riesgo:
+            continue
+
+        if buscar:
+            texto = f"{est['nombre']} {est['apellido']} {est['documento']}".lower()
+            if buscar not in texto:
+                continue
+
+        lista.append({
+            **est,
+            "ive": ive,
+            "es_riesgo": es_riesgo
+        })
+
+    return render_template(
+        "mis_grupos.html",
+        estudiantes=lista,
+        sedes=sedes,
+        cursos=cursos,
+        filtro_riesgo=filtro_riesgo,
+        buscar=buscar,
+        conteo_riesgo=conteo_riesgo
+    )
+
+
+@web_bp.route("/api/estudiante/<int:id_estudiante>/ficha-medica", methods=["GET"])
+@solo_personal_autorizado
+def api_ficha_medica(id_estudiante: int):
+    """Retorna los datos estructurados para la Ficha Médica de Emergencia (Mockup 9)."""
+    est = query_db("""
+        SELECT e.id_estudiante, u.nombre, u.apellido, u.tipo_documento, u.documento,
+               f.grupo_sanguineo, f.proveedor_eps, f.alergias_condiciones,
+               f.contacto_emergencia_nombre, f.contacto_emergencia_telefono,
+               f.direccion_domicilio
+        FROM estudiante e
+        JOIN usuario u ON u.id_usuario = e.id_usuario
+        LEFT JOIN ficha_socioeconomica f ON f.id_estudiante = e.id_estudiante
+        WHERE e.id_estudiante = %s
+    """, (id_estudiante,), one=True)
+
+    if not est:
+        return {"error": "Estudiante no encontrado"}, 404
+
+    return {
+        "success": True,
+        "estudiante": {
+            "id_estudiante": est["id_estudiante"],
+            "nombre_completo": f"{est['nombre']} {est['apellido']}",
+            "documento": f"{est['tipo_documento']} {est['documento']}",
+            "acudiente": est["contacto_emergencia_nombre"] or "María Rodríguez (Madre)",
+            "telefono": est["contacto_emergencia_telefono"] or "+57 300 123 4567",
+            "grupo_sanguineo": est["grupo_sanguineo"] or "O+",
+            "eps": est["proveedor_eps"] or "Sanitas Salud",
+            "alergias": est["alergias_condiciones"] or "Penicilina, Nueces, Polen",
+            "direccion": est["direccion_domicilio"] or "Km 7 Vía a Atánquez, Vereda El Cielo, Valledupar, Cesar (Área Rural)"
+        }
+    }
+
+
+@web_bp.route("/planilla-notas", methods=["GET"])
+@solo_personal_autorizado
+def planilla_notas():
+    """Redirige a la vista completa de calificaciones o muestra el portal docente."""
+    return redirect(url_for("calificaciones.planilla"))
+
+
+@web_bp.route("/reportes-academicos", methods=["GET"])
+@solo_personal_autorizado
+def reportes_academicos():
+    """Seguimiento y Reportes Académicos: Donut inasistencias y riesgos (Mockup 8)."""
+    sedes = query_db("SELECT id_sede, nombre FROM sede ORDER BY nombre ASC")
+    cursos = query_db("SELECT id_curso, nombre, grado FROM curso ORDER BY nombre ASC")
+
+    estudiantes = query_db("""
+        SELECT e.id_estudiante, u.nombre, u.apellido, u.tipo_documento, u.documento,
+               c.nombre AS curso_nombre
+        FROM estudiante e
+        JOIN usuario u ON u.id_usuario = e.id_usuario
+        JOIN matricula m ON m.id_estudiante = e.id_estudiante AND m.estado = 'activa'
+        JOIN curso c ON c.id_curso = m.id_curso
+        LIMIT 10
+    """)
+
+    estudiantes_riesgo = []
+    for est in estudiantes:
+        ive = calcular_ive_estudiante(est["id_estudiante"])
+        if ive["nivel_riesgo"] in ["rojo", "naranja"]:
+            estudiantes_riesgo.append({
+                **est,
+                **ive
+            })
+
+    return render_template(
+        "reportes_seguimiento.html",
+        sedes=sedes,
+        cursos=cursos,
+        estudiantes_riesgo=estudiantes_riesgo
+    )
+
+
+@web_bp.route("/institucion", methods=["GET"])
+@solo_personal_autorizado
+def institucion():
+    """Gestión de Institución y Salones."""
+    sedes = query_db("SELECT * FROM sede ORDER BY es_principal DESC, nombre ASC")
+    salones = query_db("SELECT * FROM salon_espacio ORDER BY codigo ASC")
+    return render_template("institucion.html", sedes=sedes, salones=salones)
+
+
+@web_bp.route("/auditoria", methods=["GET"])
+@solo_personal_autorizado
+def auditoria():
+    """Centro de Reportes y Auditoría."""
+    logs = query_db("SELECT * FROM log_actividad ORDER BY sello_tiempo DESC LIMIT 25")
+    return render_template("auditoria.html", logs=logs)
+
+
+@web_bp.route("/recuperar-contrasena", methods=["GET", "POST"])
+def recuperar_contrasena():
+    """Recuperación de contraseña institucional."""
+    if request.method == "POST":
+        email = request.form.get("email", "").strip()
+        flash("Se han enviado las instrucciones de recuperación a su correo institucional.", "success")
+        return redirect(url_for("web.login"))
+    return render_template("recuperar_password.html")

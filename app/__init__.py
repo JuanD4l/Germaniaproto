@@ -23,6 +23,8 @@ def create_app(config_name="development"):
     from app.blueprints.web import web_bp
     from app.blueprints.estudiante import estudiante_bp
     from app.blueprints.reportes import reportes_bp
+    from app.blueprints.calificaciones import calificaciones_bp
+    from app.blueprints.configuracion import configuracion_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(academico_bp)
@@ -30,6 +32,8 @@ def create_app(config_name="development"):
     app.register_blueprint(web_bp)
     app.register_blueprint(estudiante_bp)
     app.register_blueprint(reportes_bp)
+    app.register_blueprint(calificaciones_bp)
+    app.register_blueprint(configuracion_bp)
 
     # Handlers globales de error HTTP para peticiones JSON
     @app.errorhandler(400)

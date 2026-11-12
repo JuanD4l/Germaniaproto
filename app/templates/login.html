@@ -1,69 +1,182 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="es" class="h-full bg-slate-50">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Acceso Institucional — Germania</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="h-full flex flex-col md:flex-row">
 
-{% block title %}Iniciar Sesión - Germania{% endblock %}
-
-{% block content %}
-<div class="max-w-md mx-auto my-8">
-  <div class="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
-    <div class="bg-gradient-to-r from-brand-900 to-brand-800 p-6 text-white text-center">
-      <div class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-white/10 mb-2 border border-white/20">
-        <i class="fa-solid fa-lock text-xl text-brand-100"></i>
+  <!-- Columna Izquierda: Identidad Institucional (Navy Blue) -->
+  <div class="md:w-5/12 bg-gradient-to-br from-indigo-950 via-slate-900 to-indigo-900 text-white p-8 md:p-12 flex flex-col justify-between">
+    <div>
+      <div class="flex items-center gap-2 mb-12">
+        <div class="w-10 h-10 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center font-black text-lg">
+          <i class="fa-solid fa-graduation-cap"></i>
+        </div>
+        <span class="font-black text-xl tracking-tight">GERMANIA</span>
       </div>
-      <h2 class="text-xl font-bold tracking-tight">Acceso Institucional Germania</h2>
-      <p class="text-xs text-brand-100 mt-1">Control de Asistencia y Prevención de Deserción Escolar</p>
+
+      <h1 class="text-3xl md:text-4xl font-black tracking-tight leading-tight mb-4">
+        Gestiona tu futuro académico hoy.
+      </h1>
+      <p class="text-slate-300 text-sm leading-relaxed max-w-sm">
+        Accede a tus cursos, calificaciones y recursos educativos en un solo lugar. Diseñado para potenciar el aprendizaje colaborativo.
+      </p>
     </div>
 
-    <form method="POST" action="{{ url_for('web.login') }}" class="p-6 space-y-4">
-      <div>
-        <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Tipo y Documento / Correo</label>
-        <div class="grid grid-cols-3 gap-2">
-          <select name="tipo_documento" id="tipo_documento" class="border border-slate-300 rounded-lg px-2 py-2 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none">
-            <option value="CC" selected>CC</option>
-            <option value="TI">TI</option>
-            <option value="CE">CE</option>
-          </select>
-          <input type="text" name="identificador" id="identificador" required placeholder="Ej: 2001"
-                 class="col-span-2 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none font-medium">
-        </div>
-      </div>
-
-      <div>
-        <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Contraseña</label>
-        <input type="password" name="contrasena" id="contrasena" required value="Germania2026*"
-               class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none">
-      </div>
-
-      <button type="submit" class="w-full py-2.5 px-4 rounded-lg bg-brand-700 hover:bg-brand-800 text-white font-bold text-sm shadow-md transition">
-        <i class="fa-solid fa-arrow-right-to-bracket mr-1.5"></i> Ingresar al Sistema
-      </button>
-
-      <!-- Botones de Demostración Rápida por Rol -->
-      <div class="pt-4 border-t border-slate-200">
-        <span class="block text-xs font-bold text-slate-500 uppercase tracking-wider text-center mb-2">Acceso Rápido de Prueba (Demo)</span>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          <button type="button" onclick="cargarCredenciales('CC', '2001')" class="px-2 py-1.5 bg-slate-100 hover:bg-slate-200 rounded text-xs font-semibold text-slate-700 text-center transition">
-            👑 Rector
-          </button>
-          <button type="button" onclick="cargarCredenciales('CC', '4001')" class="px-2 py-1.5 bg-slate-100 hover:bg-slate-200 rounded text-xs font-semibold text-slate-700 text-center transition">
-            👨‍🏫 Docente
-          </button>
-          <button type="button" onclick="cargarCredenciales('CC', '3001')" class="px-2 py-1.5 bg-slate-100 hover:bg-slate-200 rounded text-xs font-semibold text-slate-700 text-center transition">
-            📋 Secretaría
-          </button>
-          <button type="button" onclick="cargarCredenciales('TI', '1065849201')" class="px-2 py-1.5 bg-brand-100 hover:bg-brand-200 rounded text-xs font-bold text-brand-900 text-center transition border border-brand-300">
-            🎓 Estudiante
-          </button>
-        </div>
-      </div>
-    </form>
+    <div class="flex items-center gap-6 text-xs text-slate-300 pt-8 border-t border-white/10">
+      <span class="flex items-center gap-1.5"><i class="fa-solid fa-circle-check text-emerald-400"></i> Control Total</span>
+      <span class="flex items-center gap-1.5"><i class="fa-solid fa-shield-halved text-emerald-400"></i> Acceso Seguro</span>
+    </div>
   </div>
-</div>
+
+  <!-- Columna Derecha: Formulario de Inicio de Sesión -->
+  <div class="flex-1 bg-white p-8 md:p-16 flex flex-col justify-between overflow-y-auto">
+    <div class="max-w-md w-full mx-auto my-auto space-y-6">
+
+      <div>
+        <h2 class="text-2xl font-black text-slate-900 tracking-tight">Bienvenido de nuevo</h2>
+        <p class="text-xs text-slate-500 mt-1">Inicie sesión para acceder a su panel de control educativo. (Acceso Institucional)</p>
+      </div>
+
+      <!-- Selector de Rol (Tabs Mockup) -->
+      <div class="grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-2xl text-xs font-bold">
+        <button type="button" onclick="seleccionarRol('admin', 'CC', '2001')" id="tab_admin"
+                class="py-2 rounded-xl text-center transition text-slate-600 hover:text-slate-900">
+          Administrador
+        </button>
+        <button type="button" onclick="seleccionarRol('profe', 'CC', '4002')" id="tab_profe"
+                class="py-2 rounded-xl text-center transition bg-indigo-950 text-white shadow">
+          Profesor
+        </button>
+        <button type="button" onclick="seleccionarRol('estudiante', 'TI', '1065123456')" id="tab_estudiante"
+                class="py-2 rounded-xl text-center transition text-slate-600 hover:text-slate-900">
+          Estudiante
+        </button>
+      </div>
+
+      <!-- Alertas Flash -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="space-y-2">
+            {% for category, message in messages %}
+              <div class="p-3 rounded-xl text-xs font-bold border {% if category == 'error' %}bg-red-50 text-red-700 border-red-200{% elif category == 'success' %}bg-emerald-50 text-emerald-700 border-emerald-200{% else %}bg-blue-50 text-blue-700 border-blue-200{% endif %}">
+                {{ message }}
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <form method="POST" action="{{ url_for('web.login') }}" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold uppercase text-slate-600 mb-1">ID o Correo Electrónico</label>
+          <div class="grid grid-cols-3 gap-2">
+            <select name="tipo_documento" id="tipo_documento" class="text-xs border border-slate-200 rounded-xl px-2 py-2.5 bg-slate-50 font-bold focus:ring-2 focus:ring-indigo-950 focus:outline-none">
+              <option value="CC" selected>CC</option>
+              <option value="TI">TI</option>
+              <option value="CE">CE</option>
+            </select>
+            <div class="col-span-2 relative">
+              <input type="text" name="identificador" id="identificador" value="4002" required placeholder="nombre@institucion.edu"
+                     class="w-full pl-3 pr-3 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-indigo-950 focus:outline-none">
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="flex justify-between items-center mb-1">
+            <label class="text-xs font-bold uppercase text-slate-600">Contraseña</label>
+            <a href="{{ url_for('web.recuperar_contrasena') }}" class="text-[11px] font-semibold text-slate-500 hover:text-indigo-950">
+              ¿Olvidaste tu contraseña?
+            </a>
+          </div>
+          <div class="relative">
+            <input type="password" name="contrasena" id="contrasena" value="Germania2026*" required
+                   class="w-full pl-3 pr-10 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-indigo-950 focus:outline-none">
+            <button type="button" onclick="togglePass()" class="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 text-sm">
+              <i class="fa-regular fa-eye" id="eyeIcon"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <input type="checkbox" id="recordarme" class="w-4 h-4 rounded border-slate-300 text-indigo-950 focus:ring-indigo-900">
+          <label for="recordarme" class="text-xs text-slate-600 select-none">Recordarme en este dispositivo</label>
+        </div>
+
+        <button type="submit" class="w-full py-3 px-4 rounded-xl bg-indigo-950 hover:bg-indigo-900 text-white font-bold text-xs shadow-lg transition flex items-center justify-center gap-2">
+          <span>Iniciar Sesión</span>
+          <i class="fa-solid fa-arrow-right"></i>
+        </button>
+
+        <div class="text-center text-xs text-slate-500 pt-1">
+          ¿No tienes una cuenta? <span class="font-bold text-slate-800">Contacta con tu institución</span>
+        </div>
+
+        <!-- Demostración Rápida 1-Click (Acceso Instantáneo) -->
+        <div class="pt-4 border-t border-slate-100">
+          <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center mb-2">Perfiles Demo de Acceso Directo</div>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-[11px]">
+            <button type="button" onclick="seleccionarRol('profe', 'CC', '4002')" class="p-2 bg-indigo-50 hover:bg-indigo-100 rounded-lg font-bold text-indigo-900 border border-indigo-200 text-center">
+              👩‍🏫 Elena Rivas
+            </button>
+            <button type="button" onclick="seleccionarRol('admin', 'CC', '2001')" class="p-2 bg-slate-50 hover:bg-slate-100 rounded-lg font-bold text-slate-700 border border-slate-200 text-center">
+              👑 Rectoría
+            </button>
+            <button type="button" onclick="seleccionarRol('admin', 'CC', '3001')" class="p-2 bg-slate-50 hover:bg-slate-100 rounded-lg font-bold text-slate-700 border border-slate-200 text-center">
+              📋 Secretaría
+            </button>
+            <button type="button" onclick="seleccionarRol('estudiante', 'TI', '1065123456')" class="p-2 bg-emerald-50 hover:bg-emerald-100 rounded-lg font-bold text-emerald-800 border border-emerald-200 text-center">
+              🎓 Juan Pérez
+            </button>
+          </div>
+        </div>
+
+      </form>
+    </div>
+
+    <!-- Footer Links -->
+    <div class="flex items-center justify-between text-[11px] text-slate-400 pt-8 border-t border-slate-100 uppercase tracking-wider font-bold">
+      <a href="#" class="hover:text-slate-600">Términos</a>
+      <a href="#" class="hover:text-slate-600">Privacidad</a>
+      <a href="#" class="hover:text-slate-600">Soporte</a>
+    </div>
+  </div>
 
 <script>
-  function cargarCredenciales(tipo, doc) {
-    document.getElementById('tipo_documento').value = tipo;
-    document.getElementById('identificador').value = doc;
-    document.getElementById('contrasena').value = 'Germania2026*';
+function seleccionarRol(rol, tipo, doc) {
+  document.getElementById('tipo_documento').value = tipo;
+  document.getElementById('identificador').value = doc;
+  document.getElementById('contrasena').value = 'Germania2026*';
+
+  const tAdmin = document.getElementById('tab_admin');
+  const tProfe = document.getElementById('tab_profe');
+  const tEst = document.getElementById('tab_estudiante');
+
+  [tAdmin, tProfe, tEst].forEach(t => {
+    t.className = "py-2 rounded-xl text-center transition text-slate-600 hover:text-slate-900";
+  });
+
+  if (rol === 'admin') tAdmin.className = "py-2 rounded-xl text-center transition bg-indigo-950 text-white shadow";
+  else if (rol === 'profe') tProfe.className = "py-2 rounded-xl text-center transition bg-indigo-950 text-white shadow";
+  else if (rol === 'estudiante') tEst.className = "py-2 rounded-xl text-center transition bg-indigo-950 text-white shadow";
+}
+
+function togglePass() {
+  const p = document.getElementById('contrasena');
+  const i = document.getElementById('eyeIcon');
+  if (p.type === 'password') {
+    p.type = 'text';
+    i.className = 'fa-regular fa-eye-slash';
+  } else {
+    p.type = 'password';
+    i.className = 'fa-regular fa-eye';
   }
+}
 </script>
-{% endblock %}
+</body>
+</html>

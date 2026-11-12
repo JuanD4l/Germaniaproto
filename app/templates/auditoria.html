@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block title %}Centro de Reportes y Auditoría — Germania{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <!-- Header -->
+  <div>
+    <h1 class="text-2xl font-black text-slate-900 tracking-tight">Centro de Reportes y Auditoría</h1>
+    <p class="text-xs text-slate-500 mt-0.5">Módulo de control legal y administrativo para la gestión de certificaciones institucionales y trazabilidad de operaciones del sistema.</p>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+    <!-- Tarjeta: Generación Masiva de Boletines -->
+    <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 md:col-span-2 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-file-lines text-indigo-950"></i>
+          <h2 class="text-sm font-black text-slate-900">Generación Masiva de Boletines</h2>
+        </div>
+        <span class="px-2.5 py-0.5 bg-emerald-100 text-emerald-800 rounded-full text-[10px] font-black uppercase">Periodo Académico 2026</span>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Nivel Educativo</label>
+          <select class="w-full text-xs font-medium border border-slate-200 rounded-xl p-2.5 bg-slate-50">
+            <option selected>Educación Media General</option>
+            <option>Básica Secundaria</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Sección / Curso</label>
+          <select class="w-full text-xs font-semibold border border-slate-200 rounded-xl p-2.5 bg-slate-50">
+            <option selected>5to Año - A</option>
+            <option>9-A Matemáticas</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="pt-2 flex items-center justify-between">
+        <span class="text-xs text-slate-500 font-bold">● 45 alumnos detectados</span>
+        <a href="/api/v1/reportes/simat" class="px-5 py-2.5 bg-indigo-950 hover:bg-indigo-900 text-white rounded-xl text-xs font-bold shadow transition flex items-center gap-2">
+          <i class="fa-solid fa-gears"></i> Procesar Boletines
+        </a>
+      </div>
+    </div>
+
+    <!-- Tarjeta: Certificados Legales -->
+    <div class="bg-gradient-to-br from-indigo-950 to-slate-900 rounded-3xl p-6 text-white shadow-md space-y-4">
+      <div class="flex items-center gap-2 border-b border-white/10 pb-3">
+        <i class="fa-solid fa-stamp text-amber-400"></i>
+        <h2 class="text-sm font-black tracking-tight">Certificados Legales</h2>
+      </div>
+      <p class="text-xs text-slate-300 leading-relaxed">
+        Emisión inmediata de certificados de conducta, estudios y notas certificadas con firma digital institucional y QR.
+      </p>
+      <div class="space-y-2 pt-2">
+        <button onclick="alert('Constancia de estudio generada con firma digital.')" class="w-full py-2.5 px-4 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs flex items-center justify-between transition border border-white/15">
+          <span>Constancia de Estudio</span>
+          <i class="fa-solid fa-file-arrow-down"></i>
+        </button>
+        <button onclick="alert('Notas certificadas descargadas en formato seguro.')" class="w-full py-2.5 px-4 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs flex items-center justify-between transition border border-white/15">
+          <span>Notas Certificadas</span>
+          <i class="fa-solid fa-file-arrow-down"></i>
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Logs de Actividad del Sistema -->
+  <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+    <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div class="flex items-center gap-2">
+        <i class="fa-solid fa-terminal text-indigo-950"></i>
+        <h2 class="text-base font-black text-slate-900 tracking-tight">Logs de Actividad del Sistema</h2>
+      </div>
+      <div class="text-xs font-semibold text-slate-400">
+        Mostrando registros del sistema de las últimas 24 horas
+      </div>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-xs">
+        <thead class="bg-slate-50 uppercase text-slate-400 font-bold tracking-wider border-b border-slate-200">
+          <tr>
+            <th class="p-3.5">Sello de Tiempo</th>
+            <th class="p-3.5">Administrador</th>
+            <th class="p-3.5">Módulo</th>
+            <th class="p-3.5">Acción / Evento</th>
+            <th class="p-3.5 text-center">Estado</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          {% for l in logs %}
+          <tr class="hover:bg-slate-50 transition">
+            <td class="p-3.5 font-mono text-slate-500 text-[11px]">{{ l.sello_tiempo }}</td>
+            <td class="p-3.5 font-bold text-slate-900 flex items-center gap-2">
+              <span class="w-6 h-6 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center text-[10px]">
+                {{ l.administrador[:2] }}
+              </span>
+              {{ l.administrador }}
+            </td>
+            <td class="p-3.5 font-semibold text-indigo-900">{{ l.modulo }}</td>
+            <td class="p-3.5 text-slate-700">{{ l.accion }}</td>
+            <td class="p-3.5 text-center">
+              {% if l.estado == 'AUDITADO' %}
+                <span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-full text-[10px] font-black uppercase">AUDITADO</span>
+              {% else %}
+                <span class="px-2.5 py-1 bg-red-100 text-red-800 rounded-full text-[10px] font-black uppercase">ALERTA</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Banner Inferior de Cumplimiento Legal -->
+    <div class="p-4 bg-slate-50 border-t border-slate-200 flex items-start gap-3 text-xs text-slate-500">
+      <i class="fa-solid fa-shield-halved text-indigo-950 text-base mt-0.5"></i>
+      <div>
+        <span class="font-bold text-slate-800">Cumplimiento Legal y Auditoría Permanente:</span>
+        Toda actividad realizada en este módulo queda registrada bajo firma digital única del administrador. Los documentos emitidos cuentan con validación QR de autenticidad institucional conforme a las normativas del MEN.
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+

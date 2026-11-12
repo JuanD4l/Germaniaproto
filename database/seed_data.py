@@ -42,10 +42,29 @@ def get_seed_sql_statements():
         (2, 'CC', '2001', 'María', 'Rectoría', 'rectoria@germania.edu.co', default_pw, '3000000002'),
         (3, 'CC', '3001', 'Alberto', 'Secretaría', 'secretaria@germania.edu.co', default_pw, '3000000003'),
         (4, 'CC', '4001', 'Carlos', 'Mendoza', 'carlos.mendoza@germania.edu.co', default_pw, '3000000004'),
-        (4, 'CC', '4002', 'Elena', 'Morales', 'elena.morales@germania.edu.co', default_pw, '3000000005'),
+        (4, 'CC', '4002', 'Elena', 'Rivas', 'elena.rivas@germania.edu.co', default_pw, '3000000005'),
         (5, 'TI', '1065849201', 'Juan', 'Pérez', 'juan.perez@germania.edu.co', default_pw, '3000000006'),
         (5, 'TI', '1065849202', 'Laura', 'Díaz', 'laura.diaz@germania.edu.co', default_pw, '3000000007'),
-        (5, 'TI', '1065849203', 'Mateo', 'Gómez', 'mateo.gomez@germania.edu.co', default_pw, '3000000008')
+        (5, 'TI', '1065849203', 'Mateo', 'Gómez', 'mateo.gomez@germania.edu.co', default_pw, '3000000008'),
+        (5, 'TI', '1065123456', 'Juan', 'Pérez', 'juan.perez2@germania.edu.co', default_pw, '3000000009'),
+        (5, 'TI', '1065987654', 'María', 'García', 'maria.garcia@germania.edu.co', default_pw, '3000000010'),
+        (5, 'TI', '1065112233', 'Carlos', 'Rodríguez', 'carlos.rodriguez@germania.edu.co', default_pw, '3000000011'),
+        (5, 'TI', '1065112234', 'Ana', 'Beltrán', 'ana.beltran@germania.edu.co', default_pw, '3000000012'),
+        (5, 'TI', '1065112235', 'Pedro', 'Gómez', 'pedro.gomez@germania.edu.co', default_pw, '3000000013'),
+        (5, 'TI', '1065112236', 'Sofía', 'Vargas', 'sofia.vargas@germania.edu.co', default_pw, '3000000014'),
+        (5, 'TI', '1065112237', 'Luis', 'Martínez', 'luis.martinez@germania.edu.co', default_pw, '3000000015'),
+        (5, 'TI', '1065112238', 'Laura', 'Castro', 'laura.castro@germania.edu.co', default_pw, '3000000016'),
+        (5, 'TI', '1065112239', 'Mateo', 'Jiménez', 'mateo.jimenez@germania.edu.co', default_pw, '3000000017'),
+        (5, 'TI', '1065112240', 'Valentina', 'Ortiz', 'valentina.ortiz@germania.edu.co', default_pw, '3000000018'),
+        (5, 'TI', '1065112241', 'Daniel', 'Quintero', 'daniel.quintero@germania.edu.co', default_pw, '3000000019'),
+        (5, 'TI', '1065112242', 'Isabela', 'Salazar', 'isabela.salazar@germania.edu.co', default_pw, '3000000020'),
+        (5, 'TI', '20240012', 'Juan', 'Alvarado Montenegro', 'juan.alvarado@germania.edu.co', default_pw, '3000000021'),
+        (5, 'TI', '20240015', 'Lucía', 'Bermúdez Estrada', 'lucia.bermudez@germania.edu.co', default_pw, '3000000022'),
+        (5, 'TI', '20240018', 'Roberto', 'Calderón Vega', 'roberto.calderon@germania.edu.co', default_pw, '3000000023'),
+        (5, 'TI', '1092348', 'Mateo', 'Rodríguez', 'mateo.rodriguez@germania.edu.co', default_pw, '3000000024'),
+        (5, 'TI', '1092551', 'Isabella', 'López', 'isabella.lopez@germania.edu.co', default_pw, '3000000025'),
+        (5, 'TI', '1092882', 'Lucas', 'Garzón', 'lucas.garzon@germania.edu.co', default_pw, '3000000026'),
+        (5, 'TI', '1092889', 'Mateo', 'Alemán', 'mateo.aleman@germania.edu.co', default_pw, '3000000027')
     ]
 
     return {

@@ -150,24 +150,78 @@ def run_init():
                     VALUES (1, 4, 'Matemáticas')
                 """)
                 cursor.execute("""
+                    INSERT OR IGNORE INTO profesor (id_profesor, id_usuario, especialidad)
+                    VALUES (2, 5, 'Matemáticas y Cálculo')
+                """)
+                cursor.execute("""
                     INSERT OR IGNORE INTO asignacion (id_asignacion, id_profesor, id_materia, id_curso)
                     VALUES (1, 1, 1, 1)
                 """)
                 cursor.execute("""
-                    INSERT OR IGNORE INTO horario (id_horario, id_asignacion, dia_semana, hora_inicio, hora_fin, aula)
-                    VALUES (1, 1, 'lunes', '07:00', '08:30', 'Aula 101')
+                    INSERT OR IGNORE INTO asignacion (id_asignacion, id_profesor, id_materia, id_curso)
+                    VALUES (2, 2, 1, 1)
                 """)
                 cursor.execute("""
                     INSERT OR IGNORE INTO horario (id_horario, id_asignacion, dia_semana, hora_inicio, hora_fin, aula)
-                    VALUES (2, 1, 'miercoles', '08:30', '10:00', 'Aula 101')
+                    VALUES (1, 1, 'lunes', '07:00', '08:30', 'Pabellón B - 204')
                 """)
                 cursor.execute("""
-                    INSERT OR IGNORE INTO estudiante (id_estudiante, id_usuario, direccion, fecha_nacimiento, puntaje_esa)
-                    VALUES (1, 6, 'Vereda Germania', '2012-05-10', 0.20)
+                    INSERT OR IGNORE INTO horario (id_horario, id_asignacion, dia_semana, hora_inicio, hora_fin, aula)
+                    VALUES (2, 1, 'miercoles', '08:30', '10:00', 'Pabellón B - 204')
                 """)
+
+                # Sembrar todos los estudiantes
+                estudiantes_meta = [
+                    ('1065849201', 'Vereda Germania', '2012-05-10', 0.20, 'O+', 'Sanitas Salud', 'Penicilina, Nueces, Polen', 'María Rodríguez', '+57 300 123 4567', 'Km 7 Vía a Atánquez, Vereda El Cielo, Valledupar, Cesar (Área Rural)'),
+                    ('1065123456', 'Km 7 Vía a Atánquez, Vereda El Cielo', '2011-04-12', 0.45, 'O+', 'Sanitas Salud', 'Penicilina, Nueces, Polen', 'María Rodríguez', '+57 300 123 4567', 'Km 7 Vía a Atánquez, Vereda El Cielo, Valledupar, Cesar (Área Rural)'),
+                    ('1065987654', 'Vereda Las Flores', '2011-09-20', 0.15, 'A+', 'Nueva EPS', 'Ninguna', 'Carlos García', '+57 310 987 6543', 'Vereda Las Flores, Finca La Esperanza'),
+                    ('1065112233', 'Vereda El Jabo', '2010-11-15', 0.60, 'B+', 'Coosalud', 'Rinitis', 'Rosa Rodríguez', '+57 312 345 6789', 'Vereda El Jabo, Sector El Puente'),
+                    ('1065112234', 'Vereda Patillal', '2011-02-14', 0.10, 'O+', 'Famisanar', 'Ninguna', 'Jorge Beltrán', '+57 314 567 8901', 'Corregimiento de Patillal'),
+                    ('1065112235', 'Vereda Guacoche', '2011-06-18', 0.25, 'O-', 'Salud Total', 'Polen', 'Martha Gómez', '+57 315 678 9012', 'Corregimiento de Guacoche'),
+                    ('1065112236', 'Vereda Atánquez', '2011-08-30', 0.30, 'A-', 'Sura', 'Ninguna', 'David Vargas', '+57 316 789 0123', 'Corregimiento de Atánquez'),
+                    ('1065112237', 'Vereda Badillo', '2011-03-22', 0.20, 'AB+', 'Sanitas', 'Ninguna', 'Lucía Martínez', '+57 317 890 1234', 'Corregimiento de Badillo'),
+                    ('1065112238', 'Vereda La Vega', '2011-12-05', 0.15, 'O+', 'Compensar', 'Asma leve', 'Fernando Castro', '+57 318 901 2345', 'Vereda La Vega'),
+                    ('1065112239', 'Vereda Los Corazones', '2011-07-11', 0.22, 'B-', 'Sanitas', 'Ninguna', 'Gloria Jiménez', '+57 319 012 3456', 'Corregimiento Los Corazones'),
+                    ('1065112240', 'Vereda Las Raíces', '2011-01-29', 0.18, 'O+', 'Nueva EPS', 'Ninguna', 'Andrés Ortiz', '+57 320 123 4567', 'Corregimiento Las Raíces'),
+                    ('1065112241', 'Vereda El Alto', '2011-05-19', 0.28, 'A+', 'Salud Total', 'Ninguna', 'Paola Quintero', '+57 321 234 5678', 'Vereda El Alto de la Vuelta'),
+                    ('1065112242', 'Vereda El Jabo', '2011-10-08', 0.12, 'O+', 'Coosalud', 'Ninguna', 'Roberto Salazar', '+57 322 345 6789', 'Vereda El Jabo'),
+                    ('20240012', 'Sede Principal Urbana', '2009-03-15', 0.10, 'O+', 'Sanitas Salud', 'Ninguna', 'Carmen Montenegro', '+57 301 234 5678', 'Calle 14 # 8-22, Valledupar'),
+                    ('20240015', 'Km 3 Vía a La Paz', '2009-07-20', 0.55, 'B+', 'Nueva EPS', 'Rinitis alérgica', 'Héctor Bermúdez', '+57 302 345 6789', 'Vereda San Lorenzo, Finca El Recuerdo'),
+                    ('20240018', 'Barrio Los Fundadores', '2008-11-02', 0.05, 'A+', 'Sura', 'Ninguna', 'Patricia Vega', '+57 303 456 7890', 'Carrera 23 # 12-40, Valledupar'),
+                    ('1092348', 'Vereda Atánquez', '2011-04-10', 0.65, 'O+', 'Coosalud', 'Ninguna', 'Clara Rodríguez', '+57 304 567 8901', 'Sector Resguardo Indígena Kankuamo'),
+                    ('1092551', 'Vereda Guacochito', '2011-08-14', 0.40, 'AB+', 'Sanitas', 'Polen', 'Javier López', '+57 305 678 9012', 'Vereda Guacochito Km 2'),
+                    ('1092882', 'Vereda El Alto', '2010-12-25', 0.70, 'O-', 'Nueva EPS', 'Asma', 'Silvia Garzón', '+57 306 789 0123', 'Vereda El Alto'),
+                    ('1092889', 'Sede Principal', '2009-02-18', 0.10, 'O+', 'Sanitas', 'Ninguna', 'Martín Alemán', '+57 307 890 1234', 'Calle Real # 4-50')
+                ]
+
+                for doc, dir_dom, fnac, pesa, gsang, eps, alerg, acud, tel_acud, dir_comp in estudiantes_meta:
+                    u = cursor.execute("SELECT id_usuario FROM usuario WHERE documento = ?", (doc,)).fetchone()
+                    if u:
+                        uid = u["id_usuario"] if isinstance(u, dict) else u[0]
+                        cursor.execute("""
+                            INSERT OR IGNORE INTO estudiante (id_usuario, direccion, fecha_nacimiento, puntaje_esa)
+                            VALUES (?, ?, ?, ?)
+                        """, (uid, dir_dom, fnac, pesa))
+                        e = cursor.execute("SELECT id_estudiante FROM estudiante WHERE id_usuario = ?", (uid,)).fetchone()
+                        if e:
+                            eid = e["id_estudiante"] if isinstance(e, dict) else e[0]
+                            # Estado de matrícula: Carlos Rodríguez como 'retirada', los demás 'activa'
+                            est_mat = 'retirada' if doc == '1065112233' else 'activa'
+                            cursor.execute("""
+                                INSERT OR IGNORE INTO matricula (id_estudiante, id_curso, id_anio, fecha, estado, documentacion_fisica_entregada)
+                                VALUES (?, 1, 1, '2026-01-25', ?, 1)
+                            """, (eid, est_mat))
+
+                            cursor.execute("""
+                                INSERT OR IGNORE INTO ficha_socioeconomica
+                                (id_estudiante, distancia_kms, tiempo_desplazamiento_min, medio_transporte, grupo_sanguineo, proveedor_eps, alergias_condiciones, contacto_emergencia_nombre, contacto_emergencia_telefono, direccion_domicilio, vulnerabilidad_score)
+                                VALUES (?, 7.0, 40, 'Caminata', ?, ?, ?, ?, ?, ?, ?)
+                            """, (eid, gsang, eps, alerg, acud, tel_acud, dir_comp, pesa))
+
+                # Configuración de usuario por defecto para Elena Rivas (id_usuario=5)
                 cursor.execute("""
-                    INSERT OR IGNORE INTO matricula (id_matricula, id_estudiante, id_curso, id_anio, fecha, estado, documentacion_fisica_entregada)
-                    VALUES (1, 1, 1, 1, '2026-01-25', 'activa', 1)
+                    INSERT OR IGNORE INTO configuracion_usuario (id_usuario, umbral_inasistencia_critica, umbral_rendimiento_bajo, notificar_alertas_automaticas)
+                    VALUES (5, 15.0, 3.0, 1)
                 """)
 
                 cursor.execute("""
@@ -189,6 +243,8 @@ def run_init():
 
             close_db()
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         print(f"[!] Advertencia durante la inicialización de BD: {e}")
         print("[!] El despliegue continuará con normalidad.")
 

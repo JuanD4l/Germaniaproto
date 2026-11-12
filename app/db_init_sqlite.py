@@ -189,6 +189,80 @@ def init_sqlite_db(connection: sqlite3.Connection):
         FOREIGN KEY (id_estudiante) REFERENCES estudiante(id_estudiante),
         FOREIGN KEY (id_periodo) REFERENCES periodo(id_periodo)
     );
+
+    CREATE TABLE IF NOT EXISTS ficha_socioeconomica (
+        id_ficha INTEGER PRIMARY KEY AUTOINCREMENT,
+        id_estudiante INTEGER NOT NULL UNIQUE,
+        distancia_kms REAL DEFAULT 0.0,
+        tiempo_desplazamiento_min INTEGER DEFAULT 0,
+        medio_transporte TEXT DEFAULT 'Caminata',
+        acceso_transporte_escolar INTEGER DEFAULT 0,
+        subsidio_alimentacion_pae INTEGER DEFAULT 1,
+        grupo_sanguineo TEXT DEFAULT 'O+',
+        proveedor_eps TEXT DEFAULT 'Sanitas Salud',
+        alergias_condiciones TEXT DEFAULT 'Ninguna',
+        contacto_emergencia_nombre TEXT,
+        contacto_emergencia_telefono TEXT,
+        direccion_domicilio TEXT,
+        vulnerabilidad_score REAL DEFAULT 0.10,
+        FOREIGN KEY (id_estudiante) REFERENCES estudiante(id_estudiante)
+    );
+
+    CREATE TABLE IF NOT EXISTS excusas (
+        id_excusa INTEGER PRIMARY KEY AUTOINCREMENT,
+        id_estudiante INTEGER NOT NULL,
+        fecha_inicio TEXT NOT NULL,
+        fecha_fin TEXT NOT NULL,
+        motivo TEXT NOT NULL,
+        descripcion TEXT,
+        estado TEXT DEFAULT 'Pendiente',
+        id_usuario_aprobador INTEGER,
+        fecha_solicitud TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (id_estudiante) REFERENCES estudiante(id_estudiante),
+        FOREIGN KEY (id_usuario_aprobador) REFERENCES usuario(id_usuario)
+    );
+
+    CREATE TABLE IF NOT EXISTS auditoria_notas (
+        id_log INTEGER PRIMARY KEY AUTOINCREMENT,
+        id_usuario INTEGER NOT NULL,
+        id_estudiante INTEGER NOT NULL,
+        accion TEXT NOT NULL,
+        nota_anterior REAL,
+        nota_nueva REAL,
+        motivo_cambio TEXT,
+        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario),
+        FOREIGN KEY (id_estudiante) REFERENCES estudiante(id_estudiante)
+    );
+
+    CREATE TABLE IF NOT EXISTS log_actividad (
+        id_log INTEGER PRIMARY KEY AUTOINCREMENT,
+        sello_tiempo TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        administrador TEXT NOT NULL,
+        modulo TEXT NOT NULL,
+        accion TEXT NOT NULL,
+        estado TEXT NOT NULL DEFAULT 'AUDITADO'
+    );
+
+    CREATE TABLE IF NOT EXISTS configuracion_usuario (
+        id_config INTEGER PRIMARY KEY AUTOINCREMENT,
+        id_usuario INTEGER NOT NULL UNIQUE,
+        umbral_inasistencia_critica REAL DEFAULT 15.0,
+        umbral_rendimiento_bajo REAL DEFAULT 3.0,
+        notificar_alertas_automaticas INTEGER DEFAULT 1,
+        firma_digital_url TEXT,
+        FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario)
+    );
+
+    CREATE TABLE IF NOT EXISTS salon_espacio (
+        id_salon INTEGER PRIMARY KEY AUTOINCREMENT,
+        codigo TEXT NOT NULL,
+        nombre TEXT NOT NULL,
+        sede_bloque TEXT NOT NULL,
+        capacidad INTEGER NOT NULL DEFAULT 35,
+        equipamiento TEXT,
+        estado TEXT NOT NULL DEFAULT 'Disponible'
+    );
     """)
 
     # Sembrar Catálogos Base
@@ -214,22 +288,54 @@ def init_sqlite_db(connection: sqlite3.Connection):
         cursor.execute("INSERT OR IGNORE INTO parametro_sistema (clave, valor, descripcion) VALUES (?, ?, ?)", (clave, val, desc))
 
     sedes = [
-        ('Sede Principal Santa Ana', '120001001234', 'Corregimiento Germania, Valledupar', 1),
-        ('Sede Rural El Prado', '120001001235', 'Vereda El Prado', 0),
-        ('Sede Rural Las Flores', '120001001236', 'Vereda Las Flores', 0)
+        ('Sede Principal Santa Ana', '120001001001', 'Km 5 Vía Corregimiento Santa Ana', 1),
+        ('Sede Rural La Vega', '120001001002', 'Vereda La Vega', 0),
+        ('Sede Rural El Jabo', '120001001003', 'Vereda El Jabo', 0),
+        ('Sede Rural Guacoche', '120001001004', 'Corregimiento de Guacoche', 0),
+        ('Sede Rural Guacochito', '120001001005', 'Corregimiento de Guacochito', 0),
+        ('Sede Rural Los Corazones', '120001001006', 'Corregimiento Los Corazones', 0),
+        ('Sede Rural Las Raíces', '120001001007', 'Corregimiento Las Raíces', 0),
+        ('Sede Rural El Alto de la Vuelta', '120001001008', 'Vereda El Alto', 0),
+        ('Sede Rural Badillo', '120001001009', 'Corregimiento de Badillo', 0),
+        ('Sede Rural Patillal', '120001001010', 'Corregimiento de Patillal', 0),
+        ('Sede Rural Atánquez', '120001001011', 'Corregimiento de Atánquez', 0)
     ]
     for nom, dane, dir_, princ in sedes:
         cursor.execute("INSERT OR IGNORE INTO sede (nombre, codigo_dane, direccion, es_principal) VALUES (?, ?, ?, ?)", (nom, dane, dir_, princ))
 
-    materias = ['Matemáticas', 'Lengua Castellana', 'Ciencias Naturales', 'Ciencias Sociales', 'Inglés']
+    materias = [
+        'Matemáticas', 'Lengua Castellana', 'Ciencias Naturales', 'Ciencias Sociales', 'Inglés',
+        'Cálculo Integral', 'Química Orgánica', 'Filosofía y Ética', 'Biología Celular', 'Economía Política'
+    ]
     for m in materias:
         cursor.execute("INSERT OR IGNORE INTO materia (nombre) VALUES (?)", (m,))
 
     cursor.execute("INSERT OR IGNORE INTO anio_lectivo (anio, fecha_inicio, fecha_fin, estado) VALUES (2026, '2026-01-20', '2026-11-30', 'activo')")
     cursor.execute("INSERT OR IGNORE INTO periodo (id_anio, numero, fecha_inicio, fecha_fin, estado) VALUES (1, 1, '2026-01-20', '2026-04-10', 'abierto')")
+    cursor.execute("INSERT OR IGNORE INTO periodo (id_anio, numero, fecha_inicio, fecha_fin, estado) VALUES (1, 2, '2026-04-11', '2026-06-20', 'abierto')")
 
+    cursor.execute("INSERT OR IGNORE INTO curso (id_sede, id_anio, nombre, grado, jornada) VALUES (1, 1, 'Matemáticas 9-A', 9, 'manana')")
     cursor.execute("INSERT OR IGNORE INTO curso (id_sede, id_anio, nombre, grado, jornada) VALUES (1, 1, 'Grado 6° A', 6, 'manana')")
     cursor.execute("INSERT OR IGNORE INTO curso (id_sede, id_anio, nombre, grado, jornada) VALUES (1, 1, 'Grado 7° A', 7, 'manana')")
+    cursor.execute("INSERT OR IGNORE INTO curso (id_sede, id_anio, nombre, grado, jornada) VALUES (1, 1, 'Undécimo Grado (11º) - Grupo A', 11, 'manana')")
+
+    salones = [
+        ('A-101', 'Laboratorio de Ciencias', 'Urbana Bloque Norte Piso 1', 35, 'Proyector, 12 Mesas', 'Disponible'),
+        ('B-204', 'Aula General', 'Urbana Bloque Sur Piso 2', 40, 'Pupitres, Smart TV', 'Ocupado'),
+        ('R-02', 'Biblioteca Rural', 'Rural Módulo Principal', 20, 'Estantería, 4 Computadores', 'Mantenimiento'),
+        ('C-305', 'Sala de Sistemas', 'Urbana Bloque Norte Piso 3', 30, '30 PCs, Fibra Óptica', 'Disponible')
+    ]
+    for cod, nom, blq, cap, eq, est in salones:
+        cursor.execute("INSERT OR IGNORE INTO salon_espacio (codigo, nombre, sede_bloque, capacidad, equipamiento, estado) VALUES (?, ?, ?, ?, ?, ?)", (cod, nom, blq, cap, eq, est))
+
+    logs_actividad = [
+        ('2026-11-09 14:22:10', 'Juan Delgado', 'Matrículas', 'Modificación de estatus: Alumno #99281 a "Activo"', 'AUDITADO'),
+        ('2026-11-09 13:45:02', 'María Rojas', 'Docentes', 'Carga masiva de calificaciones 3er Lapso - Curso 4-B', 'AUDITADO'),
+        ('2026-11-09 11:10:55', 'System Admin', 'Seguridad', 'Intento de acceso fallido desde IP 192.168.1.104', 'ALERTA'),
+        ('2026-11-09 09:30:15', 'Juan Delgado', 'Reportes', 'Generación de Certificado Legal PDF Alumno #10223', 'AUDITADO')
+    ]
+    for st, adm, mod, acc, est in logs_actividad:
+        cursor.execute("INSERT OR IGNORE INTO log_actividad (sello_tiempo, administrador, modulo, accion, estado) VALUES (?, ?, ?, ?, ?)", (st, adm, mod, acc, est))
 
     connection.commit()
     cursor.close()

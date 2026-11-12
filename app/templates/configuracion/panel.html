@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}Configuración de Usuario — Germania{% endblock %}
+
+{% block content %}
+<div class="space-y-6 max-w-5xl mx-auto">
+
+  <!-- Header -->
+  <div>
+    <h1 class="text-2xl font-black text-slate-900 tracking-tight">Configuración de Usuario</h1>
+    <p class="text-xs text-slate-500 mt-0.5">Gestiona tus parámetros académicos y perfil profesional.</p>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+
+    <!-- Tabs Laterales: Perfil, Preferencias de Aula, Seguridad -->
+    <div class="space-y-1">
+      <button class="w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 transition">
+        Perfil
+      </button>
+      <button class="w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold bg-indigo-950 text-white shadow-md transition flex items-center justify-between">
+        <span>Preferencias de Aula</span>
+        <i class="fa-solid fa-chevron-right text-[10px]"></i>
+      </button>
+      <button class="w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 transition">
+        Seguridad
+      </button>
+    </div>
+
+    <!-- Panel Central de Configuración (Mockup 2) -->
+    <div class="md:col-span-3 space-y-6">
+
+      <form method="POST" action="{{ url_for('configuracion.guardar_config') }}" class="space-y-6">
+
+        <!-- Parámetros del Índice de Vulnerabilidad (IVE) -->
+        <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 space-y-6">
+          <div class="flex items-center gap-2 border-b border-slate-100 pb-3">
+            <i class="fa-solid fa-sliders text-indigo-950"></i>
+            <h2 class="text-sm font-black text-slate-900">Parámetros del Índice de Vulnerabilidad (IVE)</h2>
+          </div>
+
+          <!-- Slider 1: Umbral Inasistencia Crítica -->
+          <div>
+            <div class="flex justify-between items-center mb-1">
+              <label class="text-xs font-bold uppercase text-slate-600 tracking-wider">Umbral de Inasistencia Crítica</label>
+              <span class="text-lg font-black text-slate-900" id="valInasistencia">{{ config.umbral_inasistencia_critica if config else 15 }}%</span>
+            </div>
+            <input type="range" name="umbral_inasistencia_critica" min="5" max="30" step="1"
+                   value="{{ config.umbral_inasistencia_critica if config else 15 }}"
+                   oninput="document.getElementById('valInasistencia').innerText = this.value + '%'"
+                   class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-950">
+            <p class="text-[11px] text-slate-400 mt-1">Define el porcentaje de faltas permitidas antes de disparar una alerta de riesgo.</p>
+          </div>
+
+          <!-- Slider 2: Umbral de Rendimiento Bajo -->
+          <div>
+            <div class="flex justify-between items-center mb-1">
+              <label class="text-xs font-bold uppercase text-slate-600 tracking-wider">Umbral de Rendimiento Bajo</label>
+              <span class="text-lg font-black text-slate-900" id="valRendimiento">{{ config.umbral_rendimiento_bajo if config else 3.0 }}</span>
+            </div>
+            <input type="range" name="umbral_rendimiento_bajo" min="1.0" max="4.0" step="0.1"
+                   value="{{ config.umbral_rendimiento_bajo if config else 3.0 }}"
+                   oninput="document.getElementById('valRendimiento').innerText = parseFloat(this.value).toFixed(1)"
+                   class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-950">
+            <p class="text-[11px] text-slate-400 mt-1">Promedio mínimo ponderado para el seguimiento preventivo de estudiantes.</p>
+          </div>
+
+          <!-- Switch: Notificar alertas de riesgo automáticamente -->
+          <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+            <div>
+              <div class="text-xs font-bold text-slate-800">Notificar alertas de riesgo automáticamente</div>
+              <div class="text-[11px] text-slate-400">Se enviará un correo institucional al tutor si se alcanzan los umbrales.</div>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" name="notificar_alertas_automaticas" value="1" checked class="sr-only peer">
+              <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-950"></div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Fila de Información de Perfil y Firma Digital -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+
+          <!-- Información de Perfil -->
+          <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 text-center space-y-3">
+            <div class="text-[11px] font-bold uppercase text-slate-400 tracking-wider text-left">Información de Perfil</div>
+            <div class="w-20 h-20 rounded-full bg-gradient-to-tr from-indigo-900 to-indigo-600 text-white flex items-center justify-center font-bold text-xl mx-auto shadow-md">
+              ER
+            </div>
+            <div>
+              <h3 class="font-black text-slate-900 text-base">Elena Rivas</h3>
+              <p class="text-xs font-semibold text-slate-500">Senior Educator / Docente Titular</p>
+              <span class="inline-block mt-2 px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-[10px] font-mono font-bold">
+                ID Académico: #GER-9921
+              </span>
+            </div>
+          </div>
+
+          <!-- Firma Digital -->
+          <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 space-y-3">
+            <div class="text-[11px] font-bold uppercase text-slate-400 tracking-wider">Firma Digital</div>
+            <div class="border-2 border-dashed border-slate-200 hover:border-indigo-950 rounded-2xl p-6 text-center transition cursor-pointer bg-slate-50/50 flex flex-col items-center justify-center h-32">
+              <i class="fa-solid fa-cloud-arrow-up text-2xl text-slate-400 mb-1"></i>
+              <div class="font-bold text-slate-700 text-xs">Cargar Firma Digital</div>
+              <div class="text-[10px] text-slate-400">Formato PNG o SVG (Max 2MB)</div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Botón Guardar Cambios -->
+        <div class="flex justify-end">
+          <button type="submit" class="px-8 py-3 rounded-2xl bg-indigo-950 hover:bg-indigo-900 text-white font-bold text-xs shadow-lg transition">
+            Guardar Cambios
+          </button>
+        </div>
+
+      </form>
+
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}
+
